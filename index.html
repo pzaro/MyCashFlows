@@ -28,8 +28,8 @@
         .total-val { text-align: center; font-size: 1.3rem; font-weight: bold; color: #dc3545; margin: 10px 0; }
         #yearSection { display: none; margin-top: 15px; border-top: 1px solid #eee; padding-top: 10px; }
         .bal-input-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; font-size: 0.75rem; }
-        .bal-input-row span { flex: 1; }
-        .bal-input-row input { width: 100px; padding: 5px; font-size: 0.85rem; }
+        .bal-input-row span { flex: 1; margin-right: 10px; }
+        .bal-input-row input { width: 110px; padding: 6px; font-size: 0.9rem; border: 1px solid #ccc; border-radius: 6px; text-align: right; }
     </style>
 </head>
 <body>
@@ -67,7 +67,7 @@
 <div class="container">
     <h2 id="balanceHeader">🔒 Balance <button class="lock-btn" id="lockBtn" onclick="handleLock()">Unlock</button></h2>
     <div id="privateSection">
-        <div class="total-val" id="totalLabel">0€</div>
+        <div class="total-val" id="totalLabel">Φόρτωση...</div>
         <div class="stat-box">
             <div class="pie-container"><canvas id="pieChart"></canvas></div>
             <div id="diffList" style="margin-top:15px;"></div>
@@ -83,26 +83,29 @@
 
 <script>
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz-Nn1_bdeZjD0ouVDujWi4IZTvM2WdFxkTnHCQHpzavKTHEzfclHjwVuGHDaW-kOP_Ig/exec";
-    const accounts = ["ΑΤΤΙΚΗΣ ΠΡΟΘΕΣΜΙΑΚΗ ΠΑΝΟΣ", "ΑΤΤΙΚΗΣ CREDIA TARGET MATURITY", "ΑΤΤΙΚΗΣ ΑΝΟΙΧΤΟΣ", "ΠΕΙΡΑΙΩΣ BUSSINES", "EUROBANK ΑΝΟΙΧΤΟ ΠΑΝΟΣ", "ΕΠΙΤΑΓΕΣ", "ΑΝΟΙΧΤΑ ΥΠΟΛΟΙΠΑ ΠΕΛΑΤΩΝ", "ΑΤΤΙΚΗΣ ΠΡΟΘΕΣΜΙΑΚΗ ΛΙΑ", "PRONTI", "EUROBANK ΠΡΟΘΕΣΜΙΑΚΗ ΛΙΑ", "EUROBANK", "EUROBANK ΑΝΟΙΧΤΟΣ ΛΙΑ", "REVOLUT", "ΠΕΙΡΑΙΩΣ BUSSINES ΜΕΤΟΧΕΣ", "CASA", "VACANZE"];
-    
     let chartM, chartY, chartP;
     let isLocked = true;
     let lastData = null;
 
-    // Προ-δημιουργία inputs για να μην είναι ποτέ κενά
-    function buildInputs() {
+    function buildInputs(data) {
         const container = document.getElementById('balInputs');
-        container.innerHTML = accounts.map((name, i) => `
-            <div class="bal-input-row">
-                <span>${name}</span>
-                <input type="number" step="0.01" class="bal-val" data-name="${name}" placeholder="0.00">
-            </div>
-        `).join('');
-        
-        const mSel = document.getElementById('balMonth');
         const months = ["ΙΑΝ", "ΦΕΒ", "ΜΑΡ", "ΑΠΡ", "ΜΑΪ", "ΙΟΥΝ", "ΙΟΥΛ", "ΑΥΓ", "ΣΕΠ", "ΟΚΤ", "ΝΟΕ", "ΔΕΚ"];
-        mSel.innerHTML = months.map((m, i) => `<option value="${i}">${m}</option>`).join('');
-        mSel.value = new Date().getMonth();
+        const mSel = document.getElementById('balMonth');
+        
+        if(mSel.options.length === 0) {
+            mSel.innerHTML = months.map((m, i) => `<option value="${i}">${m}</option>`).join('');
+            mSel.value = new Date().getMonth();
+        }
+
+        // Δημιουργία inputs με βάση τα ονόματα που ήρθαν από το Sheet
+        if(data && data.balanceData) {
+            container.innerHTML = data.balanceData.labels.map((name, i) => `
+                <div class="bal-input-row">
+                    <span>${name}</span>
+                    <input type="number" step="0.01" class="bal-val" data-index="${i}" value="${data.balanceData.currentValues[i] || 0}">
+                </div>
+            `).join('');
+        }
     }
 
     function setType(v) {
@@ -123,9 +126,7 @@
                 document.getElementById('privateSection').style.display = 'block';
                 document.getElementById('lockBtn').innerText = "Lock 🔒";
                 document.getElementById('lockBtn').style.background = "#dc3545";
-                buildInputs(); // Εξασφάλιση ότι υπάρχουν τα inputs
                 if(lastData) fillPrivateData(lastData);
-                loadData();
             }
         } else {
             isLocked = true;
@@ -133,6 +134,53 @@
             document.getElementById('lockBtn').innerText = "Unlock";
             document.getElementById('lockBtn').style.background = "#6c757d";
         }
+    }
+
+    function fillPrivateData(data) {
+        document.getElementById('totalLabel').innerText = data.balanceData.total.toLocaleString() + "€";
+        
+        // Κατασκευή Inputs με τις τιμές του αρχείου
+        buildInputs(data);
+
+        // Γράφημα Πίτας
+        if(chartP) chartP.destroy();
+        chartP = new Chart(document.getElementById('pieChart'), {
+            type: 'doughnut',
+            data: { 
+                labels: data.balanceData.labels, 
+                datasets: [{ 
+                    data: data.balanceData.currentValues, 
+                    backgroundColor: ['#FF6384','#36A2EB','#FFCE56','#4BC0C0','#9966FF','#FF9F40','#8AC926','#1982C4','#6A4C93','#F15BB5','#FEE440','#00BBF9','#00F5D4','#9B5DE5'] 
+                }] 
+            },
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 9 } } } } }
+        });
+
+        // Λίστα Διαφορών
+        let listHtml = "";
+        data.balanceData.labels.forEach((name, i) => {
+            const diff = data.balanceData.diffs[i];
+            const diffClass = diff > 0 ? 'diff-up' : (diff < 0 ? 'diff-down' : '');
+            listHtml += `<div class="balance-row"><span>${name}</span><span class="${diffClass}">${diff > 0 ? '▲' : (diff < 0 ? '▼' : '•')} ${Math.abs(diff).toLocaleString()}€</span></div>`;
+        });
+        document.getElementById('diffList').innerHTML = listHtml;
+    }
+
+    function loadData() {
+        fetch(SCRIPT_URL).then(r => r.json()).then(data => {
+            lastData = data;
+            
+            // Ενημέρωση κατηγοριών και τραπεζών στη φόρμα
+            document.getElementById('categoryList').innerHTML = data.categories.map(c => `<option value="${c}">`).join('');
+            document.getElementById('bank').innerHTML = '<option value="" disabled selected>Τράπεζα</option>' + data.banks.map(b => `<option value="${b}">${b}</option>`).join('');
+            
+            // Γραφήματα 2026
+            if(chartM) chartM.destroy(); chartM = drawBar('monthChart', data.stats.month.income, data.stats.month.expense);
+            if(chartY) chartY.destroy(); chartY = drawBar('yearChart', data.stats.year.income, data.stats.year.expense);
+
+            // Αν είναι ήδη ξεκλείδωτο, ανανέωσε και το Balance
+            if(!isLocked) fillPrivateData(data);
+        });
     }
 
     function drawBar(id, inc, exp) {
@@ -143,52 +191,25 @@
         });
     }
 
-    function fillPrivateData(data) {
-        document.getElementById('totalLabel').innerText = data.balanceData.total.toLocaleString() + "€";
-        if(chartP) chartP.destroy();
-        chartP = new Chart(document.getElementById('pieChart'), {
-            type: 'doughnut',
-            data: { labels: data.balanceData.labels, datasets: [{ data: data.balanceData.currentValues, backgroundColor: ['#FF6384','#36A2EB','#FFCE56','#4BC0C0','#9966FF','#FF9F40','#8AC926','#1982C4','#6A4C93','#F15BB5','#FEE440','#00BBF9','#00F5D4','#9B5DE5'] }] },
-            options: { plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 9 } } } } }
-        });
-
-        let listHtml = "";
-        data.balanceData.labels.forEach((name, i) => {
-            const diff = data.balanceData.diffs[i];
-            const diffClass = diff > 0 ? 'diff-up' : (diff < 0 ? 'diff-down' : '');
-            listHtml += `<div class="balance-row"><span>${name}</span><span class="${diffClass}">${diff > 0 ? '▲' : (diff < 0 ? '▼' : '•')} ${Math.abs(diff).toLocaleString()}€</span></div>`;
-        });
-        document.getElementById('diffList').innerHTML = listHtml;
-
-        // Γέμισμα των inputs με τις τρέχουσες τιμές
-        const inputs = document.getElementsByClassName('bal-val');
-        data.balanceData.labels.forEach((name, i) => {
-            for(let input of inputs) {
-                if(input.getAttribute('data-name') === name) {
-                    input.value = data.balanceData.currentValues[i];
-                }
-            }
-        });
-    }
-
-    function loadData() {
-        fetch(SCRIPT_URL).then(r => r.json()).then(data => {
-            lastData = data;
-            document.getElementById('categoryList').innerHTML = data.categories.map(c => `<option value="${c}">`).join('');
-            document.getElementById('bank').innerHTML = '<option value="" disabled selected>Τράπεζα</option>' + data.banks.map(b => `<option value="${b}">${b}</option>`).join('');
-            
-            if(chartM) chartM.destroy(); chartM = drawBar('monthChart', data.stats.month.income, data.stats.month.expense);
-            if(chartY) chartY.destroy(); chartY = drawBar('yearChart', data.stats.year.income, data.stats.year.expense);
-
-            if(!isLocked) fillPrivateData(data);
-        });
-    }
-
     function saveBal() {
         const btn = document.getElementById('balBtn');
-        btn.disabled = true;
-        const vals = Array.from(document.getElementsByClassName('bal-val')).map(i => parseFloat(i.value) || 0);
-        fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: "updateBalance", monthIndex: document.getElementById('balMonth').value, values: vals }) }).then(() => { alert("Αποθηκεύτηκε!"); loadData(); btn.disabled = false; });
+        btn.disabled = true; btn.innerText = "Αποθήκευση...";
+        
+        const inputs = document.getElementsByClassName('bal-val');
+        const vals = new Array(inputs.length);
+        for(let i=0; i<inputs.length; i++) {
+            vals[i] = parseFloat(inputs[i].value) || 0;
+        }
+
+        fetch(SCRIPT_URL, { 
+            method: 'POST', 
+            body: JSON.stringify({ action: "updateBalance", monthIndex: document.getElementById('balMonth').value, values: vals }) 
+        }).then(() => { 
+            alert("Το Balance ενημερώθηκε!"); 
+            loadData(); 
+            btn.disabled = false; 
+            btn.innerText = "Αποθήκευση"; 
+        });
     }
 
     window.onload = loadData;
@@ -198,7 +219,10 @@
         e.preventDefault();
         const btn = document.getElementById('submitBtn');
         btn.disabled = true;
-        fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ date: document.getElementById('date').value, amount: document.getElementById('amount').value, category: document.getElementById('category').value, bank: document.getElementById('bank').value, type: document.getElementById('type').value }) }).then(() => { 
+        fetch(SCRIPT_URL, { 
+            method: 'POST', 
+            body: JSON.stringify({ date: document.getElementById('date').value, amount: document.getElementById('amount').value, category: document.getElementById('category').value, bank: document.getElementById('bank').value, type: document.getElementById('type').value }) 
+        }).then(() => { 
             document.getElementById('amount').value = ''; 
             btn.disabled = false;
             loadData(); 
