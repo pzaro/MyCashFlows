@@ -4,10 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cash Flow 2026</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
     <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #f4f4f9; display: flex; justify-content: center; padding: 20px; }
-        .container { background: white; padding: 2rem; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 100%; max-width: 400px; }
-        h2 { text-align: center; color: #333; margin-bottom: 1.5rem; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #f4f4f9; display: flex; flex-direction: column; align-items: center; padding: 20px; }
+        .container { background: white; padding: 2rem; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 100%; max-width: 400px; margin-bottom: 20px; }
+        
+        h2 { text-align: center; color: #333; margin-bottom: 1.5rem; margin-top: 0; }
         .form-group { margin-bottom: 1rem; }
         label { display: block; margin-bottom: 0.5rem; color: #666; font-weight: 500; }
         input, select { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 16px; box-sizing: border-box; transition: border-color 0.3s; }
@@ -26,12 +29,47 @@
         .loader { display: none; text-align: center; margin-top: 10px; color: #007bff; }
         .message { text-align: center; margin-top: 15px; font-weight: bold; display: none; }
         .footer { text-align: center; font-size: 0.8rem; color: #aaa; margin-top: 20px; }
+
+        /* ΣΤΥΛ ΓΙΑ ΤΑ ΓΡΑΦΗΜΑΤΑ */
+        .stats-wrapper { display: flex; justify-content: space-between; gap: 10px; margin-top: 10px; }
+        .stat-box { flex: 1; text-align: center; }
+        .stat-title { font-size: 0.9rem; font-weight: bold; color: #555; margin-bottom: 5px; }
+        .chart-container { position: relative; height: 120px; width: 100%; display: flex; justify-content: center; }
+        .stat-numbers { margin-top: 8px; font-size: 0.8rem; line-height: 1.4; }
+        .inc-text { color: #28a745; font-weight: bold; }
+        .exp-text { color: #dc3545; font-weight: bold; }
     </style>
 </head>
 <body>
 
+<div class="container" id="dashboard" style="display:none;">
+    <h2>📊 Εικόνα Ταμείου</h2>
+    <div class="stats-wrapper">
+        <div class="stat-box">
+            <div class="stat-title">Τρέχων Μήνας</div>
+            <div class="chart-container">
+                <canvas id="monthChart"></canvas>
+            </div>
+            <div class="stat-numbers">
+                <div class="inc-text">Έσοδα: <span id="m-inc">0€</span></div>
+                <div class="exp-text">Έξοδα: <span id="m-exp">0€</span></div>
+            </div>
+        </div>
+        <div class="stat-box" style="border-left: 1px solid #eee;">
+            <div class="stat-title">Τρέχον Έτος</div>
+            <div class="chart-container">
+                <canvas id="yearChart"></canvas>
+            </div>
+            <div class="stat-numbers">
+                <div class="inc-text">Έσοδα: <span id="y-inc">0€</span></div>
+                <div class="exp-text">Έξοδα: <span id="y-exp">0€</span></div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div class="container">
-    <h2>💸 Ταμειακές Ροές</h2>
+    <h2>💸 Καταχώρηση</h2>
     <form id="cashForm">
         
         <div class="type-selector">
@@ -74,8 +112,8 @@
 </div>
 
 <script>
-    // ΤΟ URL ΣΟΥ:
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwOhF1o1RD2lnvdmHOQ7uG9niufYGjPwflrh7fgK6ayYwiVz8VQEd8KapQaZYVaq3cI9Q/exec";
+    // ΤΟ ΝΕΟ URL ΣΟΥ:
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwLiuMxXPBIaoXf6h7EEfeNiHtru5B7HheDDhK9tq-TObfQ0R_6VbDnfKNcdQiELsgsTA/exec";
 
     document.getElementById('date').valueAsDate = new Date();
 
@@ -90,6 +128,32 @@
         }
     }
 
+    // Συνάρτηση μορφοποίησης νομίσματος
+    function formatMoney(amount) {
+        return Number(amount).toLocaleString('el-GR', { style: 'currency', currency: 'EUR', minimumFractionDigits: 0 });
+    }
+
+    // Συνάρτηση Δημιουργίας Γραφήματος
+    function createChart(ctx, income, expense) {
+        return new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Έσοδα', 'Έξοδα'],
+                datasets: [{
+                    data: [income, expense],
+                    backgroundColor: ['#28a745', '#dc3545'], // Πράσινο - Κόκκινο
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '65%', // Πάχος δακτυλίου
+                plugins: { legend: { display: false } }
+            }
+        });
+    }
+
     window.onload = function() {
         console.log("Φόρτωση δεδομένων...");
         fetch(SCRIPT_URL)
@@ -97,6 +161,7 @@
             .then(data => {
                 console.log("Λήφθηκαν:", data);
                 
+                // --- 1. Γέμισμα λιστών (Κατηγορίες / Τράπεζες) ---
                 const catList = document.getElementById('categoryList');
                 catList.innerHTML = ''; 
                 if (data.categories && data.categories.length > 0) {
@@ -116,15 +181,23 @@
                         option.text = bank;
                         bankSelect.appendChild(option);
                     });
-                } else {
-                    const defaultBanks = ["Μετρητά", "Πειραιώς", "Eurobank", "Alpha", "Εθνική", "IRIS", "Κάρτα"];
-                    defaultBanks.forEach(bank => {
-                        let option = document.createElement('option');
-                        option.value = bank;
-                        option.text = bank;
-                        bankSelect.appendChild(option);
-                    });
                 }
+
+                // --- 2. Ενημέρωση Στατιστικών & Γραφημάτων ---
+                if (data.stats) {
+                    document.getElementById('dashboard').style.display = 'block';
+
+                    // Μηνιαία
+                    document.getElementById('m-inc').innerText = formatMoney(data.stats.month.income);
+                    document.getElementById('m-exp').innerText = formatMoney(data.stats.month.expense);
+                    createChart(document.getElementById('monthChart'), data.stats.month.income, data.stats.month.expense);
+
+                    // Ετήσια
+                    document.getElementById('y-inc').innerText = formatMoney(data.stats.year.income);
+                    document.getElementById('y-exp').innerText = formatMoney(data.stats.year.expense);
+                    createChart(document.getElementById('yearChart'), data.stats.year.income, data.stats.year.expense);
+                }
+
             })
             .catch(error => {
                 console.error('Error loading lists:', error);
@@ -173,7 +246,9 @@
                 
                 setTimeout(() => {
                     message.style.display = 'none';
-                }, 3000);
+                    // Προαιρετικά: Ξαναφόρτωσε τη σελίδα για να ενημερωθούν τα γραφήματα
+                    // window.location.reload(); 
+                }, 2000);
 
             } else {
                 throw new Error(data.message || "Άγνωστο σφάλμα");
@@ -191,6 +266,4 @@
 </script>
 
 </body>
-
 </html>
-
