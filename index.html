@@ -16,7 +16,6 @@
         input, select { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 16px; box-sizing: border-box; transition: border-color 0.3s; }
         input:focus, select:focus { border-color: #007bff; outline: none; }
         
-        /* Κουμπιά επιλογής Έσοδο/Έξοδο */
         .type-selector { display: flex; gap: 10px; margin-bottom: 1rem; }
         .type-option { flex: 1; padding: 10px; text-align: center; border: 1px solid #ddd; border-radius: 8px; cursor: pointer; font-weight: bold; }
         .type-option.active.income { background-color: #d4edda; color: #155724; border-color: #c3e6cb; }
@@ -30,11 +29,11 @@
         .message { text-align: center; margin-top: 15px; font-weight: bold; display: none; }
         .footer { text-align: center; font-size: 0.8rem; color: #aaa; margin-top: 20px; }
 
-        /* ΣΤΥΛ ΓΙΑ ΤΑ ΓΡΑΦΗΜΑΤΑ */
+        /* ΣΤΥΛ ΓΡΑΦΗΜΑΤΩΝ (ΤΩΡΑ ΚΑΤΩ) */
         .stats-wrapper { display: flex; justify-content: space-between; gap: 10px; margin-top: 10px; }
         .stat-box { flex: 1; text-align: center; }
         .stat-title { font-size: 0.9rem; font-weight: bold; color: #555; margin-bottom: 5px; }
-        .chart-container { position: relative; height: 120px; width: 100%; display: flex; justify-content: center; }
+        .chart-container { position: relative; height: 110px; width: 100%; display: flex; justify-content: center; }
         .stat-numbers { margin-top: 8px; font-size: 0.8rem; line-height: 1.4; }
         .inc-text { color: #28a745; font-weight: bold; }
         .exp-text { color: #dc3545; font-weight: bold; }
@@ -42,36 +41,9 @@
 </head>
 <body>
 
-<div class="container" id="dashboard" style="display:none;">
-    <h2>📊 Εικόνα Ταμείου</h2>
-    <div class="stats-wrapper">
-        <div class="stat-box">
-            <div class="stat-title">Τρέχων Μήνας</div>
-            <div class="chart-container">
-                <canvas id="monthChart"></canvas>
-            </div>
-            <div class="stat-numbers">
-                <div class="inc-text">Έσοδα: <span id="m-inc">0€</span></div>
-                <div class="exp-text">Έξοδα: <span id="m-exp">0€</span></div>
-            </div>
-        </div>
-        <div class="stat-box" style="border-left: 1px solid #eee;">
-            <div class="stat-title">Τρέχον Έτος</div>
-            <div class="chart-container">
-                <canvas id="yearChart"></canvas>
-            </div>
-            <div class="stat-numbers">
-                <div class="inc-text">Έσοδα: <span id="y-inc">0€</span></div>
-                <div class="exp-text">Έξοδα: <span id="y-exp">0€</span></div>
-            </div>
-        </div>
-    </div>
-</div>
-
 <div class="container">
     <h2>💸 Καταχώρηση</h2>
     <form id="cashForm">
-        
         <div class="type-selector">
             <div class="type-option active expense" id="btn-expense" onclick="setType('Έξοδο')">Έξοδο</div>
             <div class="type-option" id="btn-income" onclick="setType('Έσοδο')">Έσοδο</div>
@@ -91,16 +63,13 @@
         <div class="form-group">
             <label>Αιτιολογία / Κατηγορία</label>
             <input list="categoryList" id="category" name="category" placeholder="Επίλεξε ή γράψε..." required autocomplete="off">
-            <datalist id="categoryList">
-                <option value="Φόρτωση...">
-            </datalist>
+            <datalist id="categoryList"></datalist>
         </div>
 
         <div class="form-group">
             <label>Τράπεζα / Μέσο Πληρωμής</label>
             <select id="bank" required>
                 <option value="" disabled selected>Επίλεξε Τράπεζα</option>
-                <option value="Φόρτωση...">Φόρτωση...</option>
             </select>
         </div>
 
@@ -108,12 +77,40 @@
         <div class="loader" id="loader">Γίνεται αποθήκευση...</div>
         <div class="message" id="message"></div>
     </form>
-    <div class="footer">Connected to Sheet: 2026</div>
 </div>
 
+<div class="container" id="dashboard" style="display:none;">
+    <h2>📊 Εικόνα Ταμείου</h2>
+    <div class="stats-wrapper">
+        <div class="stat-box">
+            <div class="stat-title">Μήνας</div>
+            <div class="chart-container">
+                <canvas id="monthChart"></canvas>
+            </div>
+            <div class="stat-numbers">
+                <div class="inc-text">Ε: <span id="m-inc">0€</span></div>
+                <div class="exp-text">Εξ: <span id="m-exp">0€</span></div>
+            </div>
+        </div>
+        <div class="stat-box" style="border-left: 1px solid #eee;">
+            <div class="stat-title">Έτος</div>
+            <div class="chart-container">
+                <canvas id="yearChart"></canvas>
+            </div>
+            <div class="stat-numbers">
+                <div class="inc-text">Ε: <span id="y-inc">0€</span></div>
+                <div class="exp-text">Εξ: <span id="y-exp">0€</span></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="footer">Connected to Sheet: 2026</div>
+
 <script>
-    // ΤΟ ΝΕΟ URL ΣΟΥ:
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyomam-M-zesvIm8hysnwx47wULg52n8y9lBMHqsnlBH0uyIpenfODN1z8TMJAggT0zWg/exec";
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwLiuMxXPBIaoXf6h7EEfeNiHtru5B7HheDDhK9tq-TObfQ0R_6VbDnfKNcdQiELsgsTA/exec";
+
+    let chartM, chartY; // Μεταβλητές για τα γραφήματα
 
     document.getElementById('date').valueAsDate = new Date();
 
@@ -128,94 +125,66 @@
         }
     }
 
-    // Συνάρτηση μορφοποίησης νομίσματος
     function formatMoney(amount) {
-        return Number(amount).toLocaleString('el-GR', { style: 'currency', currency: 'EUR', minimumFractionDigits: 0 });
+        return Number(amount).toLocaleString('el-GR') + "€";
     }
 
-    // Συνάρτηση Δημιουργίας Γραφήματος
-    function createChart(ctx, income, expense) {
-        return new Chart(ctx, {
+    function updateCharts(stats) {
+        document.getElementById('dashboard').style.display = 'block';
+        
+        // Ενημέρωση αριθμών
+        document.getElementById('m-inc').innerText = formatMoney(stats.month.income);
+        document.getElementById('m-exp').innerText = formatMoney(stats.month.expense);
+        document.getElementById('y-inc').innerText = formatMoney(stats.year.income);
+        document.getElementById('y-exp').innerText = formatMoney(stats.year.expense);
+
+        // Καταστροφή παλιών αν υπάρχουν για να μην "αναβοσβήνουν"
+        if(chartM) chartM.destroy();
+        if(chartY) chartY.destroy();
+
+        const config = (inc, exp) => ({
             type: 'doughnut',
             data: {
-                labels: ['Έσοδα', 'Έξοδα'],
                 datasets: [{
-                    data: [income, expense],
-                    backgroundColor: ['#28a745', '#dc3545'], // Πράσινο - Κόκκινο
+                    data: [inc || 0.1, exp || 0.1], // 0.1 για να φαίνεται έστω μια γραμμή αν είναι μηδέν
+                    backgroundColor: ['#28a745', '#dc3545'],
                     borderWidth: 0
                 }]
             },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                cutout: '65%', // Πάχος δακτυλίου
-                plugins: { legend: { display: false } }
-            }
+            options: { responsive: true, maintainAspectRatio: false, cutout: '70%', plugins: { legend: { display: false } } }
         });
+
+        chartM = new Chart(document.getElementById('monthChart'), config(stats.month.income, stats.month.expense));
+        chartY = new Chart(document.getElementById('yearChart'), config(stats.year.income, stats.year.expense));
     }
 
-    window.onload = function() {
-        console.log("Φόρτωση δεδομένων...");
+    function loadData() {
         fetch(SCRIPT_URL)
-            .then(response => response.json())
+            .then(r => r.json())
             .then(data => {
-                console.log("Λήφθηκαν:", data);
-                
-                // --- 1. Γέμισμα λιστών (Κατηγορίες / Τράπεζες) ---
                 const catList = document.getElementById('categoryList');
-                catList.innerHTML = ''; 
-                if (data.categories && data.categories.length > 0) {
-                    data.categories.forEach(cat => {
-                        let option = document.createElement('option');
-                        option.value = cat;
-                        catList.appendChild(option);
-                    });
-                }
+                catList.innerHTML = data.categories.map(c => `<option value="${c}">`).join('');
 
                 const bankSelect = document.getElementById('bank');
-                bankSelect.innerHTML = '<option value="" disabled selected>Επίλεξε Τράπεζα</option>';
-                if (data.banks && data.banks.length > 0) {
-                    data.banks.forEach(bank => {
-                        let option = document.createElement('option');
-                        option.value = bank;
-                        option.text = bank;
-                        bankSelect.appendChild(option);
-                    });
-                }
+                const currentBank = bankSelect.value;
+                bankSelect.innerHTML = '<option value="" disabled selected>Επίλεξε Τράπεζα</option>' + 
+                    data.banks.map(b => `<option value="${b}">${b}</option>`).join('');
+                if(currentBank) bankSelect.value = currentBank;
 
-                // --- 2. Ενημέρωση Στατιστικών & Γραφημάτων ---
-                if (data.stats) {
-                    document.getElementById('dashboard').style.display = 'block';
-
-                    // Μηνιαία
-                    document.getElementById('m-inc').innerText = formatMoney(data.stats.month.income);
-                    document.getElementById('m-exp').innerText = formatMoney(data.stats.month.expense);
-                    createChart(document.getElementById('monthChart'), data.stats.month.income, data.stats.month.expense);
-
-                    // Ετήσια
-                    document.getElementById('y-inc').innerText = formatMoney(data.stats.year.income);
-                    document.getElementById('y-exp').innerText = formatMoney(data.stats.year.expense);
-                    createChart(document.getElementById('yearChart'), data.stats.year.income, data.stats.year.expense);
-                }
-
-            })
-            .catch(error => {
-                console.error('Error loading lists:', error);
-                document.getElementById('bank').innerHTML = '<option value="Μετρητά">Μετρητά (Offline mode)</option>';
+                if(data.stats) updateCharts(data.stats);
             });
-    };
+    }
+
+    window.onload = loadData;
 
     document.getElementById('cashForm').addEventListener('submit', function(e) {
         e.preventDefault();
-        
         const submitBtn = document.getElementById('submitBtn');
         const loader = document.getElementById('loader');
         const message = document.getElementById('message');
         
         submitBtn.disabled = true;
-        submitBtn.innerText = "Αποστολή...";
         loader.style.display = 'block';
-        message.style.display = 'none';
 
         const formData = {
             date: document.getElementById('date').value,
@@ -225,46 +194,26 @@
             type: document.getElementById('type').value
         };
 
-        fetch(SCRIPT_URL, {
-            method: 'POST',
-            body: JSON.stringify(formData)
-        })
-        .then(response => response.json())
+        fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(formData) })
+        .then(r => r.json())
         .then(data => {
             loader.style.display = 'none';
             submitBtn.disabled = false;
-            submitBtn.innerText = "Καταχώρηση";
-            
             if(data.status === 'success') {
-                message.innerText = "✅ Επιτυχία!";
-                message.style.color = "green";
+                message.innerText = "✅ Αποθηκεύτηκε!";
                 message.style.display = "block";
-                
                 document.getElementById('amount').value = '';
                 document.getElementById('category').value = '';
-                document.getElementById('date').valueAsDate = new Date(); 
-                
-                setTimeout(() => {
-                    message.style.display = 'none';
-                    // Προαιρετικά: Ξαναφόρτωσε τη σελίδα για να ενημερωθούν τα γραφήματα
-                    // window.location.reload(); 
-                }, 2000);
-
-            } else {
-                throw new Error(data.message || "Άγνωστο σφάλμα");
+                loadData(); // Ανανέωση γραφημάτων μετά την αποθήκευση!
+                setTimeout(() => message.style.display = 'none', 2000);
             }
         })
-        .catch(error => {
+        .catch(err => {
             loader.style.display = 'none';
             submitBtn.disabled = false;
-            submitBtn.innerText = "Καταχώρηση";
-            message.innerText = "❌ Σφάλμα: " + error.message;
-            message.style.color = "red";
-            message.style.display = "block";
+            alert("Σφάλμα: " + err);
         });
     });
 </script>
-
 </body>
 </html>
-
