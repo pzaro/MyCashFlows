@@ -13,20 +13,19 @@
         input, select { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 16px; box-sizing: border-box; }
         
         .type-selector { display: flex; gap: 10px; margin-bottom: 1rem; }
-        .type-option { flex: 1; padding: 10px; text-align: center; border: 1px solid #ddd; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.3s; }
+        .type-option { flex: 1; padding: 10px; text-align: center; border: 1px solid #ddd; border-radius: 8px; cursor: pointer; font-weight: bold; }
         .type-option.active.income { background-color: #d4edda; color: #155724; border-color: #c3e6cb; }
         .type-option.active.expense { background-color: #f8d7da; color: #721c24; border-color: #f5c6cb; }
         
         button.submit-btn { width: 100%; padding: 14px; background-color: #007bff; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 16px; }
-        button.submit-btn:disabled { background-color: #ccc; }
-
+        
         /* ΣΤΑΤΙΣΤΙΚΑ */
-        .stats-wrapper { display: flex; justify-content: space-between; gap: 15px; }
-        .stat-box { flex: 1; text-align: center; background: #fafafa; padding: 10px; border-radius: 10px; }
-        .chart-container { position: relative; height: 100px; width: 100%; margin: 5px 0; }
-        .stat-numbers { font-size: 0.85rem; margin-top: 5px; line-height: 1.4; }
-        .inc { color: #28a745; font-weight: bold; }
-        .exp { color: #dc3545; font-weight: bold; }
+        .stat-box { background: #fff; padding: 15px; border-radius: 10px; margin-top: 10px; border: 1px solid #eee; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .chart-container { position: relative; height: 100px; width: 100%; }
+        .stat-numbers { display: flex; flex-direction: column; gap: 5px; margin-top: 10px; font-size: 0.95rem; border-top: 1px solid #eee; padding-top: 10px; }
+        .inc { color: #28a745; font-weight: bold; display: flex; justify-content: space-between; }
+        .exp { color: #dc3545; font-weight: bold; display: flex; justify-content: space-between; }
+        .bal { color: #333; font-weight: bold; display: flex; justify-content: space-between; border-top: 1px dashed #ccc; padding-top: 5px; margin-top: 5px; }
     </style>
 </head>
 <body>
@@ -39,46 +38,39 @@
             <div class="type-option" id="btn-income" onclick="setType('Έσοδο')">Έσοδο</div>
         </div>
         <input type="hidden" id="type" value="Έξοδο">
-        
         <div class="form-group"><input type="date" id="date" required></div>
         <div class="form-group"><input type="number" id="amount" step="0.01" placeholder="Ποσό (€)" required inputmode="decimal"></div>
-        <div class="form-group">
-            <input list="categoryList" id="category" placeholder="Αιτιολογία / Κατηγορία" required>
-            <datalist id="categoryList"></datalist>
-        </div>
-        <div class="form-group">
-            <select id="bank" required>
-                <option value="" disabled selected>Επίλεξε Τράπεζα</option>
-            </select>
-        </div>
+        <div class="form-group"><input list="categoryList" id="category" placeholder="Κατηγορία" required><datalist id="categoryList"></datalist></div>
+        <div class="form-group"><select id="bank" required><option value="" disabled selected>Τράπεζα</option></select></div>
         <button type="submit" class="submit-btn" id="submitBtn">Καταχώρηση</button>
     </form>
 </div>
 
 <div class="container" id="dashboard">
-    <h2>📊 Στατιστικά 2026</h2>
-    <div class="stats-wrapper">
-        <div class="stat-box">
-            <div style="font-weight:bold; font-size:0.8rem;">ΜΗΝΑΣ</div>
-            <div class="chart-container"><canvas id="monthChart"></canvas></div>
-            <div class="stat-numbers">
-                <div class="inc">Ε: <span id="m-inc">0€</span></div>
-                <div class="exp">Εξ: <span id="m-exp">0€</span></div>
-            </div>
+    <h2>📊 Οικονομική Εικόνα</h2>
+    
+    <div class="stat-box">
+        <div style="font-weight:bold; font-size:0.9rem; margin-bottom:10px; color:#555;">ΑΥΤΟΣ Ο ΜΗΝΑΣ</div>
+        <div class="chart-container"><canvas id="monthChart"></canvas></div>
+        <div class="stat-numbers">
+            <div class="inc"><span>Έσοδα:</span> <span id="m-inc">0€</span></div>
+            <div class="exp"><span>Έξοδα:</span> <span id="m-exp">0€</span></div>
+            <div class="bal"><span>Υπόλοιπο:</span> <span id="m-bal">0€</span></div>
         </div>
-        <div class="stat-box">
-            <div style="font-weight:bold; font-size:0.8rem;">ΕΤΟΣ</div>
-            <div class="chart-container"><canvas id="yearChart"></canvas></div>
-            <div class="stat-numbers">
-                <div class="inc">Ε: <span id="y-inc">0€</span></div>
-                <div class="exp">Εξ: <span id="y-exp">0€</span></div>
-            </div>
+    </div>
+
+    <div class="stat-box">
+        <div style="font-weight:bold; font-size:0.9rem; margin-bottom:10px; color:#555;">ΣΥΝΟΛΟ ΕΤΟΥΣ 2026</div>
+        <div class="chart-container"><canvas id="yearChart"></canvas></div>
+        <div class="stat-numbers">
+            <div class="inc"><span>Έσοδα:</span> <span id="y-inc">0€</span></div>
+            <div class="exp"><span>Έξοδα:</span> <span id="y-exp">0€</span></div>
+            <div class="bal"><span>Υπόλοιπο:</span> <span id="y-bal">0€</span></div>
         </div>
     </div>
 </div>
 
 <script>
-    // ΤΟ URL ΠΟΥ ΜΟΥ ΕΣΤΕΙΛΕΣ:
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxesQmJ3vIe75RuFvtWbPC9PwE2dF6ufuEWgCcYZHb9hIk-QyUZEa4plnTKtdsTq9nsTQ/exec";
 
     let chartM, chartY;
@@ -90,78 +82,83 @@
         document.getElementById('btn-expense').className = 'type-option' + (v==='Έξοδο'?' active expense':'');
     }
 
-    function drawChart(canvasId, income, expense) {
+    function drawBarChart(canvasId, income, expense) {
         const ctx = document.getElementById(canvasId).getContext('2d');
-        // Αν δεν υπάρχουν δεδομένα, βάζουμε 1 και 1 για να φαίνεται ένας γκρίζος κύκλος ή το σχήμα
-        const hasData = income > 0 || expense > 0;
         return new Chart(ctx, {
-            type: 'doughnut',
+            type: 'bar',
             data: {
+                labels: ['Έσοδα', 'Έξοδα'],
                 datasets: [{
-                    data: hasData ? [income, expense] : [1, 1],
-                    backgroundColor: hasData ? ['#28a745', '#dc3545'] : ['#e0e0e0', '#e0e0e0'],
-                    borderWidth: 0
+                    data: [income, expense],
+                    backgroundColor: ['#28a745', '#dc3545'],
+                    borderRadius: 5,
+                    barThickness: 20
                 }]
             },
-            options: { cutout: '70%', plugins: { legend: { display: false }, tooltip: { enabled: hasData } } }
+            options: {
+                indexAxis: 'y',
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { 
+                    legend: { display: false },
+                    // Εμφάνιση τιμής πάνω από την μπάρα
+                    tooltip: { enabled: true }
+                },
+                scales: {
+                    x: { beginAtZero: true, grid: { display: false }, ticks: { display: false } },
+                    y: { grid: { display: false }, ticks: { font: { weight: 'bold' } } }
+                }
+            }
         });
     }
 
-    function loadStatsAndLists() {
-        fetch(SCRIPT_URL)
-            .then(r => r.json())
-            .then(data => {
-                // Λίστες
-                document.getElementById('categoryList').innerHTML = data.categories.map(c => `<option value="${c}">`).join('');
-                const bSel = document.getElementById('bank');
-                const val = bSel.value;
-                bSel.innerHTML = '<option value="" disabled selected>Επίλεξε Τράπεζα</option>' + 
-                                 data.banks.map(b => `<option value="${b}">${b}</option>`).join('');
-                if(val) bSel.value = val;
+    function loadData() {
+        fetch(SCRIPT_URL).then(r => r.json()).then(data => {
+            document.getElementById('categoryList').innerHTML = data.categories.map(c => `<option value="${c}">`).join('');
+            const bSel = document.getElementById('bank');
+            const currentVal = bSel.value;
+            bSel.innerHTML = '<option value="" disabled selected>Τράπεζα</option>' + 
+                             data.banks.map(b => `<option value="${b}">${b}</option>`).join('');
+            if(currentVal) bSel.value = currentVal;
 
-                // Αριθμοί
-                document.getElementById('m-inc').innerText = data.stats.month.income + "€";
-                document.getElementById('m-exp').innerText = data.stats.month.expense + "€";
-                document.getElementById('y-inc').innerText = data.stats.year.income + "€";
-                document.getElementById('y-exp').innerText = data.stats.year.expense + "€";
+            // Ενημέρωση αριθμών Μήνα
+            document.getElementById('m-inc').innerText = data.stats.month.income.toFixed(2) + "€";
+            document.getElementById('m-exp').innerText = data.stats.month.expense.toFixed(2) + "€";
+            document.getElementById('m-bal').innerText = (data.stats.month.income - data.stats.month.expense).toFixed(2) + "€";
 
-                // Γραφήματα
-                if(chartM) chartM.destroy();
-                if(chartY) chartY.destroy();
-                chartM = drawChart('monthChart', data.stats.month.income, data.stats.month.expense);
-                chartY = drawChart('yearChart', data.stats.year.income, data.stats.year.expense);
-            });
+            // Ενημέρωση αριθμών Έτους
+            document.getElementById('y-inc').innerText = data.stats.year.income.toFixed(2) + "€";
+            document.getElementById('y-exp').innerText = data.stats.year.expense.toFixed(2) + "€";
+            document.getElementById('y-bal').innerText = (data.stats.year.income - data.stats.year.expense).toFixed(2) + "€";
+
+            if(chartM) chartM.destroy();
+            if(chartY) chartY.destroy();
+            chartM = drawBarChart('monthChart', data.stats.month.income, data.stats.month.expense);
+            chartY = drawBarChart('yearChart', data.stats.year.income, data.stats.year.expense);
+        });
     }
 
-    window.onload = loadStatsAndLists;
+    window.onload = loadData;
 
     document.getElementById('cashForm').onsubmit = function(e) {
         e.preventDefault();
         const btn = document.getElementById('submitBtn');
         btn.disabled = true; btn.innerText = "Αποθήκευση...";
         
-        const payload = {
-            date: document.getElementById('date').value,
-            amount: document.getElementById('amount').value,
-            category: document.getElementById('category').value,
-            bank: document.getElementById('bank').value,
-            type: document.getElementById('type').value
-        };
-
-        fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload) })
-            .then(r => r.json())
-            .then(res => {
-                btn.disabled = false; btn.innerText = "Καταχώρηση";
-                if(res.status === 'success') {
-                    document.getElementById('amount').value = '';
-                    document.getElementById('category').value = '';
-                    loadStatsAndLists(); // Ανανέωση γραφημάτων αμέσως!
-                }
+        fetch(SCRIPT_URL, { 
+            method: 'POST', 
+            body: JSON.stringify({
+                date: document.getElementById('date').value,
+                amount: document.getElementById('amount').value,
+                category: document.getElementById('category').value,
+                bank: document.getElementById('bank').value,
+                type: document.getElementById('type').value
             })
-            .catch(err => {
-                btn.disabled = false; btn.innerText = "Καταχώρηση";
-                alert("Σφάλμα σύνδεσης");
-            });
+        }).then(() => {
+            btn.disabled = false; btn.innerText = "Καταχώρηση";
+            document.getElementById('amount').value = '';
+            loadData();
+        });
     };
 </script>
 </body>
