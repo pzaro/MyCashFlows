@@ -33,7 +33,7 @@
     <h2>💸 Νέα Καταχώρηση</h2>
     <form id="cashForm">
         <input type="date" id="date" required style="margin-bottom:10px;">
-        <input type="number" id="amount" step="0.01" placeholder="Ποσό €" required style="margin-bottom:10px;">
+        <input type="text" id="amount" placeholder="Ποσό € (π.χ. 10,50)" required style="margin-bottom:10px;" inputmode="decimal">
         <input list="categoryList" id="category" placeholder="Αιτιολογία" required style="margin-bottom:10px;"><datalist id="categoryList"></datalist>
         <select id="bank" required style="margin-bottom:10px;"><option value="" disabled selected>Τράπεζα</option></select>
         <button type="submit" class="submit-btn" id="submitBtn">Καταχώρηση</button>
@@ -82,12 +82,18 @@
 </div>
 
 <script>
-    // ΤΟ ΣΩΣΤΟ ΣΟΥ LINK
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzgjpKsUb0WrQHVISN8paD8lrFw4nACmHV6CVD_Xfsc0OpL-qvXd7yrdxVB7wcYUp9QeA/exec";
     
     let chartM, chartY, chartP;
     let isLocked = true;
     let lastData = null;
+
+    // Συνάρτηση για τη μετατροπή κόμματος σε τελεία
+    function parseGreekFloat(val) {
+        if (!val) return 0;
+        let cleanVal = val.toString().replace(',', '.');
+        return parseFloat(cleanVal) || 0;
+    }
 
     function toggleSection(id) {
         const el = document.getElementById(id);
@@ -115,9 +121,6 @@
     function refreshPrivateUI() {
         if(!lastData || isLocked) return;
         const monthIdx = parseInt(document.getElementById('balMonth').value);
-        
-        // ΔΙΟΡΘΩΣΗ: 
-        // 0:Ονόματα(A), 1:Βάση(B), 2:Ιανουάριος(C)...
         const colIdx = monthIdx + 2; 
         const prevColIdx = colIdx - 1; 
 
@@ -129,7 +132,7 @@
         lastData.fullBalance.forEach(row => {
             labels.push(row[0]);
             const cur = parseFloat(row[colIdx]) || 0;
-            const prev = parseFloat(row[prevColIdx]) || 0;
+            const prev = (colIdx > 1) ? (parseFloat(row[prevColIdx]) || 0) : 0;
             currentValues.push(cur);
             prevValues.push(prev);
             total += cur;
@@ -163,7 +166,7 @@
         document.getElementById('balInputs').innerHTML = labels.map((name, i) => `
             <div class="bal-input-row">
                 <span>${name}</span>
-                <input type="number" step="0.01" class="bal-val" value="${currentValues[i] === 0 ? '' : currentValues[i]}" placeholder="0.00">
+                <input type="text" class="bal-val" value="${currentValues[i] === 0 ? '' : currentValues[i].toString().replace('.', ',')}" placeholder="0,00" inputmode="decimal">
             </div>
         `).join('');
     }
@@ -199,11 +202,13 @@
     function saveBal() {
         const btn = document.getElementById('balBtn');
         btn.disabled = true;
-        const vals = Array.from(document.getElementsByClassName('bal-val')).map(i => parseFloat(i.value) || 0);
+        // Μετατροπή όλων των inputs από κόμμα σε τελεία πριν το save
+        const vals = Array.from(document.getElementsByClassName('bal-val')).map(i => parseGreekFloat(i.value));
+        
         fetch(SCRIPT_URL, { 
             method: 'POST', 
             body: JSON.stringify({ action: "updateBalance", monthIndex: document.getElementById('balMonth').value, values: vals }) 
-        }).then(() => { alert("Επιτυχής Αποθήκευση!"); loadData(); btn.disabled = false; });
+        }).then(() => { alert("Αποθηκεύτηκε!"); loadData(); btn.disabled = false; });
     }
 
     window.onload = loadData;
@@ -213,9 +218,19 @@
         e.preventDefault();
         const btn = document.getElementById('submitBtn');
         btn.disabled = true;
+        
+        // Μετατροπή του ποσού από κόμμα σε τελεία
+        const finalAmount = parseGreekFloat(document.getElementById('amount').value);
+
         fetch(SCRIPT_URL, { 
             method: 'POST', 
-            body: JSON.stringify({ date: document.getElementById('date').value, amount: document.getElementById('amount').value, category: document.getElementById('category').value, bank: document.getElementById('bank').value, type: document.getElementById('type').value }) 
+            body: JSON.stringify({ 
+                date: document.getElementById('date').value, 
+                amount: finalAmount, 
+                category: document.getElementById('category').value, 
+                bank: document.getElementById('bank').value, 
+                type: "Έξοδο" // Ή Έσοδο αναλόγως τη λογική σου
+            }) 
         }).then(() => { 
             document.getElementById('amount').value = ''; 
             btn.disabled = false;
