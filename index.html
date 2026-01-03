@@ -82,7 +82,7 @@
 </div>
 
 <script>
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwxHP_Uu_25hZZk5wyMzeEAqaKu7ubCwvcsTBhD9uEjRdBzif-WC3IMIHyCdT-xKuFBsA/exec";
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz-Nn1_bdeZjD0ouVDujWi4IZTvM2WdFxkTnHCQHpzavKTHEzfclHjwVuGHDaW-kOP_Ig/exec";
     let chartM, chartY, chartP;
     let isLocked = true;
     let lastData = null;
@@ -113,8 +113,10 @@
     function refreshPrivateUI() {
         if(!lastData || isLocked) return;
         const monthIdx = parseInt(document.getElementById('balMonth').value);
-        const colIdx = monthIdx + 1; // Column A=0, B=1 (Jan), C=2 (Feb)...
-        const prevColIdx = colIdx - 1; // Για σύγκριση με τον προηγούμενο
+        
+        // Offset +1 γιατί η στήλη 0 στο fullBalance είναι τα ονόματα (Στήλη A)
+        const colIdx = monthIdx + 1; 
+        const prevColIdx = colIdx - 1; 
 
         let currentValues = [];
         let prevValues = [];
@@ -124,7 +126,8 @@
         lastData.fullBalance.forEach(row => {
             labels.push(row[0]);
             const cur = parseFloat(row[colIdx]) || 0;
-            const prev = (colIdx > 1) ? (parseFloat(row[prevColIdx]) || 0) : cur;
+            // Σύγκριση με προηγούμενη στήλη. Αν είναι Ιανουάριος, συγκρίνει με το 0.
+            const prev = (colIdx > 1) ? (parseFloat(row[prevColIdx]) || 0) : 0;
             currentValues.push(cur);
             prevValues.push(prev);
             total += cur;
@@ -132,7 +135,6 @@
 
         document.getElementById('totalLabel').innerText = total.toLocaleString() + "€";
 
-        // 1. Εμφάνιση/Απόκρυψη γραφημάτων αν ο μήνας είναι κενός
         const chartsArea = document.getElementById('balanceChartsArea');
         if (total === 0) {
             chartsArea.style.opacity = "0.3";
@@ -147,7 +149,6 @@
             });
         }
 
-        // 2. Λίστα Διαφορών (Σύγκριση με τον προηγούμενο μήνα)
         let listHtml = "";
         labels.forEach((name, i) => {
             const diff = currentValues[i] - prevValues[i];
@@ -157,7 +158,6 @@
         });
         document.getElementById('diffList').innerHTML = listHtml;
 
-        // 3. Inputs (Ανάκληση τιμών)
         document.getElementById('balInputs').innerHTML = labels.map((name, i) => `
             <div class="bal-input-row">
                 <span>${name}</span>
@@ -206,8 +206,20 @@
 
     window.onload = loadData;
     document.getElementById('date').valueAsDate = new Date();
+
+    document.getElementById('cashForm').onsubmit = function(e) {
+        e.preventDefault();
+        const btn = document.getElementById('submitBtn');
+        btn.disabled = true;
+        fetch(SCRIPT_URL, { 
+            method: 'POST', 
+            body: JSON.stringify({ date: document.getElementById('date').value, amount: document.getElementById('amount').value, category: document.getElementById('category').value, bank: document.getElementById('bank').value, type: document.getElementById('type').value }) 
+        }).then(() => { 
+            document.getElementById('amount').value = ''; 
+            btn.disabled = false;
+            loadData(); 
+        });
+    };
 </script>
 </body>
 </html>
-
-
