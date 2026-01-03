@@ -10,33 +10,26 @@
         .container { background: white; padding: 1.2rem; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); width: 100%; max-width: 420px; margin-bottom: 15px; box-sizing: border-box; position: relative; }
         h2 { text-align: center; color: #1a1a1a; font-size: 1rem; border-bottom: 2px solid #f0f0f0; padding-bottom: 8px; margin-top: 0; display: flex; justify-content: center; align-items: center; gap: 10px; }
         .form-group { margin-bottom: 0.8rem; }
-        input, select { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 10px; font-size: 16px; box-sizing: border-box; }
-        
-        /* Buttons */
+        input, select { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 10px; font-size: 16px; box-sizing: border-box; }
         .submit-btn { width: 100%; padding: 14px; background-color: #007bff; color: white; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; }
         .lock-btn { background-color: #6c757d; font-size: 0.8rem; padding: 5px 10px; border-radius: 5px; color: white; border: none; cursor: pointer; }
         .toggle-link { color: #007bff; font-size: 0.8rem; cursor: pointer; text-decoration: underline; font-weight: bold; }
-
-        /* Selectors */
         .type-selector { display: flex; gap: 8px; margin-bottom: 1rem; }
         .type-option { flex: 1; padding: 12px; text-align: center; border: 1px solid #ddd; border-radius: 10px; cursor: pointer; font-weight: bold; }
         .active.income { background-color: #d4edda; color: #155724; }
         .active.expense { background-color: #f8d7da; color: #721c24; }
-        
-        /* Charts */
         .stat-box { background: #fff; padding: 12px; border-radius: 12px; border: 1px solid #eee; margin-top: 10px; }
         .chart-container { position: relative; height: 110px; width: 100%; }
         .pie-container { position: relative; height: 220px; width: 100%; }
-        
-        /* Balance Data */
         #privateSection { display: none; border-top: 3px solid #dc3545; padding-top: 15px; margin-top: 10px; }
         .balance-row { display: flex; justify-content: space-between; font-size: 0.8rem; padding: 6px 0; border-bottom: 1px solid #f1f1f1; }
         .diff-up { color: #28a745; font-weight: bold; }
         .diff-down { color: #dc3545; font-weight: bold; }
         .total-val { text-align: center; font-size: 1.3rem; font-weight: bold; color: #dc3545; margin: 10px 0; }
-        
-        /* Toggle Switch for Year */
         #yearSection { display: none; margin-top: 15px; border-top: 1px solid #eee; padding-top: 10px; }
+        .bal-input-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; font-size: 0.75rem; }
+        .bal-input-row span { flex: 1; }
+        .bal-input-row input { width: 100px; padding: 5px; font-size: 0.85rem; }
     </style>
 </head>
 <body>
@@ -58,38 +51,27 @@
 </div>
 
 <div class="container">
-    <h2>📊 Στατιστικά 2026 
-        <span class="toggle-link" onclick="toggleSection('yearSection')">+/- Έτος</span>
-    </h2>
-    
+    <h2>📊 Στατιστικά 2026 <span class="toggle-link" onclick="toggleSection('yearSection')">+/- Έτος</span></h2>
     <div class="stat-box">
-        <div style="font-size: 0.75rem; font-weight: bold; color: #666;">ΤΡΕΧΩΝ ΜΗΝΑΣ</div>
+        <div style="font-size: 0.75rem; font-weight: bold; color: #666;">ΜΗΝΑΣ</div>
         <div class="chart-container"><canvas id="monthChart"></canvas></div>
     </div>
-
     <div id="yearSection">
         <div class="stat-box">
-            <div style="font-size: 0.75rem; font-weight: bold; color: #666;">ΣΥΝΟΛΟ ΕΤΟΥΣ</div>
+            <div style="font-size: 0.75rem; font-weight: bold; color: #666;">ΕΤΟΣ</div>
             <div class="chart-container"><canvas id="yearChart"></canvas></div>
         </div>
     </div>
 </div>
 
 <div class="container">
-    <h2 id="balanceHeader">
-        🔒 Balance 
-        <button class="lock-btn" id="lockBtn" onclick="handleLock()">Unlock</button>
-    </h2>
-
+    <h2 id="balanceHeader">🔒 Balance <button class="lock-btn" id="lockBtn" onclick="handleLock()">Unlock</button></h2>
     <div id="privateSection">
         <div class="total-val" id="totalLabel">0€</div>
-        
         <div class="stat-box">
-            <div style="font-size: 0.8rem; font-weight: bold; margin-bottom: 10px;">ΚΑΤΑΝΟΜΗ & ΜΕΤΑΒΟΛΗ</div>
             <div class="pie-container"><canvas id="pieChart"></canvas></div>
             <div id="diffList" style="margin-top:15px;"></div>
         </div>
-
         <div class="stat-box" style="background: #fafafa; border: 1px dashed #ccc;">
             <div style="font-weight:bold; font-size:0.8rem; margin-bottom:10px;">ΕΝΗΜΕΡΩΣΗ ΥΠΟΛΟΙΠΩΝ</div>
             <select id="balMonth" style="margin-bottom:10px;"></select>
@@ -101,8 +83,27 @@
 
 <script>
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz-Nn1_bdeZjD0ouVDujWi4IZTvM2WdFxkTnHCQHpzavKTHEzfclHjwVuGHDaW-kOP_Ig/exec";
+    const accounts = ["ΑΤΤΙΚΗΣ ΠΡΟΘΕΣΜΙΑΚΗ ΠΑΝΟΣ", "ΑΤΤΙΚΗΣ CREDIA TARGET MATURITY", "ΑΤΤΙΚΗΣ ΑΝΟΙΧΤΟΣ", "ΠΕΙΡΑΙΩΣ BUSSINES", "EUROBANK ΑΝΟΙΧΤΟ ΠΑΝΟΣ", "ΕΠΙΤΑΓΕΣ", "ΑΝΟΙΧΤΑ ΥΠΟΛΟΙΠΑ ΠΕΛΑΤΩΝ", "ΑΤΤΙΚΗΣ ΠΡΟΘΕΣΜΙΑΚΗ ΛΙΑ", "PRONTI", "EUROBANK ΠΡΟΘΕΣΜΙΑΚΗ ΛΙΑ", "EUROBANK", "EUROBANK ΑΝΟΙΧΤΟΣ ΛΙΑ", "REVOLUT", "ΠΕΙΡΑΙΩΣ BUSSINES ΜΕΤΟΧΕΣ", "CASA", "VACANZE"];
+    
     let chartM, chartY, chartP;
     let isLocked = true;
+    let lastData = null;
+
+    // Προ-δημιουργία inputs για να μην είναι ποτέ κενά
+    function buildInputs() {
+        const container = document.getElementById('balInputs');
+        container.innerHTML = accounts.map((name, i) => `
+            <div class="bal-input-row">
+                <span>${name}</span>
+                <input type="number" step="0.01" class="bal-val" data-name="${name}" placeholder="0.00">
+            </div>
+        `).join('');
+        
+        const mSel = document.getElementById('balMonth');
+        const months = ["ΙΑΝ", "ΦΕΒ", "ΜΑΡ", "ΑΠΡ", "ΜΑΪ", "ΙΟΥΝ", "ΙΟΥΛ", "ΑΥΓ", "ΣΕΠ", "ΟΚΤ", "ΝΟΕ", "ΔΕΚ"];
+        mSel.innerHTML = months.map((m, i) => `<option value="${i}">${m}</option>`).join('');
+        mSel.value = new Date().getMonth();
+    }
 
     function setType(v) {
         document.getElementById('type').value = v;
@@ -122,6 +123,8 @@
                 document.getElementById('privateSection').style.display = 'block';
                 document.getElementById('lockBtn').innerText = "Lock 🔒";
                 document.getElementById('lockBtn').style.background = "#dc3545";
+                buildInputs(); // Εξασφάλιση ότι υπάρχουν τα inputs
+                if(lastData) fillPrivateData(lastData);
                 loadData();
             }
         } else {
@@ -140,47 +143,44 @@
         });
     }
 
+    function fillPrivateData(data) {
+        document.getElementById('totalLabel').innerText = data.balanceData.total.toLocaleString() + "€";
+        if(chartP) chartP.destroy();
+        chartP = new Chart(document.getElementById('pieChart'), {
+            type: 'doughnut',
+            data: { labels: data.balanceData.labels, datasets: [{ data: data.balanceData.currentValues, backgroundColor: ['#FF6384','#36A2EB','#FFCE56','#4BC0C0','#9966FF','#FF9F40','#8AC926','#1982C4','#6A4C93','#F15BB5','#FEE440','#00BBF9','#00F5D4','#9B5DE5'] }] },
+            options: { plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 9 } } } } }
+        });
+
+        let listHtml = "";
+        data.balanceData.labels.forEach((name, i) => {
+            const diff = data.balanceData.diffs[i];
+            const diffClass = diff > 0 ? 'diff-up' : (diff < 0 ? 'diff-down' : '');
+            listHtml += `<div class="balance-row"><span>${name}</span><span class="${diffClass}">${diff > 0 ? '▲' : (diff < 0 ? '▼' : '•')} ${Math.abs(diff).toLocaleString()}€</span></div>`;
+        });
+        document.getElementById('diffList').innerHTML = listHtml;
+
+        // Γέμισμα των inputs με τις τρέχουσες τιμές
+        const inputs = document.getElementsByClassName('bal-val');
+        data.balanceData.labels.forEach((name, i) => {
+            for(let input of inputs) {
+                if(input.getAttribute('data-name') === name) {
+                    input.value = data.balanceData.currentValues[i];
+                }
+            }
+        });
+    }
+
     function loadData() {
         fetch(SCRIPT_URL).then(r => r.json()).then(data => {
-            // Lists
+            lastData = data;
             document.getElementById('categoryList').innerHTML = data.categories.map(c => `<option value="${c}">`).join('');
             document.getElementById('bank').innerHTML = '<option value="" disabled selected>Τράπεζα</option>' + data.banks.map(b => `<option value="${b}">${b}</option>`).join('');
-
-            // 2026 Charts (Always update month, year only if visible)
+            
             if(chartM) chartM.destroy(); chartM = drawBar('monthChart', data.stats.month.income, data.stats.month.expense);
             if(chartY) chartY.destroy(); chartY = drawBar('yearChart', data.stats.year.income, data.stats.year.expense);
 
-            // Balance (Only if unlocked)
-            if(!isLocked) {
-                document.getElementById('totalLabel').innerText = data.balanceData.total.toLocaleString() + "€";
-                if(chartP) chartP.destroy();
-                chartP = new Chart(document.getElementById('pieChart'), {
-                    type: 'doughnut',
-                    data: { labels: data.balanceData.labels, datasets: [{ data: data.balanceData.currentValues, backgroundColor: ['#FF6384','#36A2EB','#FFCE56','#4BC0C0','#9966FF','#FF9F40','#8AC926','#1982C4','#6A4C93','#F15BB5','#FEE440','#00BBF9','#00F5D4','#9B5DE5'] }] },
-                    options: { plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 9 } } } } }
-                });
-
-                let listHtml = "";
-                data.balanceData.labels.forEach((name, i) => {
-                    const diff = data.balanceData.diffs[i];
-                    const diffClass = diff > 0 ? 'diff-up' : (diff < 0 ? 'diff-down' : '');
-                    listHtml += `<div class="balance-row"><span>${name}</span><span class="${diffClass}">${diff > 0 ? '▲' : (diff < 0 ? '▼' : '•')} ${Math.abs(diff).toLocaleString()}€</span></div>`;
-                });
-                document.getElementById('diffList').innerHTML = listHtml;
-
-                document.getElementById('balInputs').innerHTML = data.balanceData.labels.map((name, i) => `
-                    <div class="balance-item" style="display:flex; justify-content:space-between; margin-bottom:5px; font-size:0.7rem;">
-                        <span>${name.substring(0,20)}</span>
-                        <input type="number" step="0.01" class="bal-val" value="${data.balanceData.currentValues[i]}" style="width:40%;">
-                    </div>`).join('');
-                
-                const mSel = document.getElementById('balMonth');
-                if(mSel.options.length === 0) {
-                    const months = ["ΙΑΝ", "ΦΕΒ", "ΜΑΡ", "ΑΠΡ", "ΜΑΪ", "ΙΟΥΝ", "ΙΟΥΛ", "ΑΥΓ", "ΣΕΠ", "ΟΚΤ", "ΝΟΕ", "ΔΕΚ"];
-                    mSel.innerHTML = months.map((m, i) => `<option value="${i}">${m}</option>`).join('');
-                }
-                mSel.value = new Date().getMonth();
-            }
+            if(!isLocked) fillPrivateData(data);
         });
     }
 
@@ -188,10 +188,11 @@
         const btn = document.getElementById('balBtn');
         btn.disabled = true;
         const vals = Array.from(document.getElementsByClassName('bal-val')).map(i => parseFloat(i.value) || 0);
-        fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: "updateBalance", monthIndex: document.getElementById('balMonth').value, values: vals }) }).then(() => { alert("OK!"); loadData(); btn.disabled = false; });
+        fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: "updateBalance", monthIndex: document.getElementById('balMonth').value, values: vals }) }).then(() => { alert("Αποθηκεύτηκε!"); loadData(); btn.disabled = false; });
     }
 
     window.onload = loadData;
+    document.getElementById('date').valueAsDate = new Date();
 
     document.getElementById('cashForm').onsubmit = function(e) {
         e.preventDefault();
