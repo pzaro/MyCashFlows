@@ -3,35 +3,46 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Finance App</title>
+    <title>Finance Manager 2026</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        body { font-family: sans-serif; background-color: #f4f7f6; display: flex; flex-direction: column; align-items: center; padding: 15px; margin: 0; }
-        .container { background: white; padding: 1.2rem; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); width: 100%; max-width: 400px; margin-bottom: 15px; position: relative; }
-        h2 { text-align: center; color: #333; font-size: 1rem; border-bottom: 2px solid #f0f0f0; padding-bottom: 8px; }
+        body { font-family: -apple-system, sans-serif; background-color: #f0f2f5; display: flex; flex-direction: column; align-items: center; padding: 15px; margin: 0; }
+        .container { background: white; padding: 1.2rem; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); width: 100%; max-width: 420px; margin-bottom: 15px; box-sizing: border-box; position: relative; }
+        h2 { text-align: center; color: #1a1a1a; font-size: 1rem; border-bottom: 2px solid #f0f0f0; padding-bottom: 8px; margin-top: 0; display: flex; justify-content: center; align-items: center; gap: 10px; }
         .form-group { margin-bottom: 0.8rem; }
-        input, select { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 16px; box-sizing: border-box; }
+        input, select { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 10px; font-size: 16px; box-sizing: border-box; }
+        
+        /* Buttons */
+        .submit-btn { width: 100%; padding: 14px; background-color: #007bff; color: white; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; }
+        .lock-btn { background-color: #6c757d; font-size: 0.8rem; padding: 5px 10px; border-radius: 5px; color: white; border: none; cursor: pointer; }
+        .toggle-link { color: #007bff; font-size: 0.8rem; cursor: pointer; text-decoration: underline; font-weight: bold; }
+
+        /* Selectors */
         .type-selector { display: flex; gap: 8px; margin-bottom: 1rem; }
-        .type-option { flex: 1; padding: 10px; text-align: center; border: 1px solid #ddd; border-radius: 8px; cursor: pointer; font-weight: bold; }
+        .type-option { flex: 1; padding: 12px; text-align: center; border: 1px solid #ddd; border-radius: 10px; cursor: pointer; font-weight: bold; }
         .active.income { background-color: #d4edda; color: #155724; }
         .active.expense { background-color: #f8d7da; color: #721c24; }
-        button.submit-btn { width: 100%; padding: 12px; background-color: #007bff; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
-        .settings-icon { position: absolute; top: 15px; right: 15px; cursor: pointer; font-size: 1.2rem; opacity: 0.2; }
         
-        /* Κρυφό Dashboard */
-        #privateDashboard { display: none; margin-top: 15px; border-top: 3px solid #007bff; padding-top: 15px; }
-        .stat-box { background: #fff; padding: 10px; border-radius: 12px; margin-bottom: 10px; border: 1px solid #eee; }
-        .chart-container { position: relative; height: 110px; }
-        .balance-row { display: flex; justify-content: space-between; font-size: 0.7rem; padding: 4px 0; border-bottom: 1px solid #f9f9f9; }
-        .diff-up { color: green; font-weight: bold; }
-        .diff-down { color: red; font-weight: bold; }
+        /* Charts */
+        .stat-box { background: #fff; padding: 12px; border-radius: 12px; border: 1px solid #eee; margin-top: 10px; }
+        .chart-container { position: relative; height: 110px; width: 100%; }
+        .pie-container { position: relative; height: 220px; width: 100%; }
+        
+        /* Balance Data */
+        #privateSection { display: none; border-top: 3px solid #dc3545; padding-top: 15px; margin-top: 10px; }
+        .balance-row { display: flex; justify-content: space-between; font-size: 0.8rem; padding: 6px 0; border-bottom: 1px solid #f1f1f1; }
+        .diff-up { color: #28a745; font-weight: bold; }
+        .diff-down { color: #dc3545; font-weight: bold; }
+        .total-val { text-align: center; font-size: 1.3rem; font-weight: bold; color: #dc3545; margin: 10px 0; }
+        
+        /* Toggle Switch for Year */
+        #yearSection { display: none; margin-top: 15px; border-top: 1px solid #eee; padding-top: 10px; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <span class="settings-icon" onclick="unlock()">⚙️</span>
-    <h2>💸 Καταχώρηση</h2>
+    <h2>💸 Νέα Κίνηση</h2>
     <form id="cashForm">
         <div class="type-selector">
             <div class="type-option active expense" id="btn-expense" onclick="setType('Έξοδο')">Έξοδο</div>
@@ -42,89 +53,155 @@
         <div class="form-group"><input type="number" id="amount" step="0.01" placeholder="Ποσό €" required></div>
         <div class="form-group"><input list="categoryList" id="category" placeholder="Αιτιολογία" required><datalist id="categoryList"></datalist></div>
         <div class="form-group"><select id="bank" required><option value="" disabled selected>Τράπεζα</option></select></div>
-        <button type="submit" class="submit-btn">Καταχώρηση</button>
+        <button type="submit" class="submit-btn" id="submitBtn">Καταχώρηση</button>
     </form>
+</div>
 
-    <div id="privateDashboard">
-        <h2>🏦 Ιδιωτικό Dashboard</h2>
-        
-        <div class="stat-box">
-            <canvas id="pieChart" style="max-height: 180px;"></canvas>
-            <div id="totalBal" style="text-align:center; font-weight:bold; color:#007bff; margin-top:10px;"></div>
-        </div>
+<div class="container">
+    <h2>📊 Στατιστικά 2026 
+        <span class="toggle-link" onclick="toggleSection('yearSection')">+/- Έτος</span>
+    </h2>
+    
+    <div class="stat-box">
+        <div style="font-size: 0.75rem; font-weight: bold; color: #666;">ΤΡΕΧΩΝ ΜΗΝΑΣ</div>
+        <div class="chart-container"><canvas id="monthChart"></canvas></div>
+    </div>
 
+    <div id="yearSection">
         <div class="stat-box">
-            <div style="font-size: 0.75rem; font-weight: bold; margin-bottom: 8px;">ΔΙΑΚΥΜΑΝΣΗ ΑΝΑ ΚΩΔΙΚΟ</div>
-            <div id="diffList"></div>
-        </div>
-
-        <div class="stat-box">
-            <select id="balMonth" style="margin-bottom:10px;"><option value="0">ΙΑΝ</option><option value="1">ΦΕΒ</option><option value="2">ΜΑΡ</option><option value="3">ΑΠΡ</option><option value="4">ΜΑΪ</option><option value="5">ΙΟΥΝ</option><option value="6">ΙΟΥΛ</option><option value="7">ΑΥΓ</option><option value="8">ΣΕΠ</option><option value="9">ΟΚΤ</option><option value="10">ΝΟΕ</option><option value="11">ΔΕΚ</option></select>
-            <div id="balInputs"></div>
-            <button onclick="saveBal()" id="balBtn" class="submit-btn" style="background:#28a745;">Αποθήκευση</button>
+            <div style="font-size: 0.75rem; font-weight: bold; color: #666;">ΣΥΝΟΛΟ ΕΤΟΥΣ</div>
+            <div class="chart-container"><canvas id="yearChart"></canvas></div>
         </div>
     </div>
 </div>
 
 <div class="container">
-    <h2>📊 Στατιστικά Μήνα</h2>
-    <div class="chart-container"><canvas id="monthChart"></canvas></div>
+    <h2 id="balanceHeader">
+        🔒 Balance 
+        <button class="lock-btn" id="lockBtn" onclick="handleLock()">Unlock</button>
+    </h2>
+
+    <div id="privateSection">
+        <div class="total-val" id="totalLabel">0€</div>
+        
+        <div class="stat-box">
+            <div style="font-size: 0.8rem; font-weight: bold; margin-bottom: 10px;">ΚΑΤΑΝΟΜΗ & ΜΕΤΑΒΟΛΗ</div>
+            <div class="pie-container"><canvas id="pieChart"></canvas></div>
+            <div id="diffList" style="margin-top:15px;"></div>
+        </div>
+
+        <div class="stat-box" style="background: #fafafa; border: 1px dashed #ccc;">
+            <div style="font-weight:bold; font-size:0.8rem; margin-bottom:10px;">ΕΝΗΜΕΡΩΣΗ ΥΠΟΛΟΙΠΩΝ</div>
+            <select id="balMonth" style="margin-bottom:10px;"></select>
+            <div id="balInputs"></div>
+            <button onclick="saveBal()" id="balBtn" class="submit-btn" style="background:#28a745; margin-top:10px;">Αποθήκευση</button>
+        </div>
+    </div>
 </div>
 
 <script>
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyOjfjaSn36dbrduHC01hxrnM2GuWWjnLbI4mrFtnu0yWTlh1Ud6hoFdu9eRLSrB9ilqA/exec";
-    let chartM, chartP;
-    const accounts = ["ΑΤΤΙΚΗΣ ΠΡΟΘΕΣΜΙΑΚΗ ΠΑΝΟΣ", "ΑΤΤΙΚΗΣ CREDIA TARGET MATURITY", "ΑΤΤΙΚΗΣ ΑΝΟΙΧΤΟΣ", "ΠΕΙΡΑΙΩΣ BUSSINES", "EUROBANK ΑΝΟΙΧΤΟ ΠΑΝΟΣ", "ΕΠΙΤΑΓΕΣ", "ΑΝΟΙΧΤΑ ΥΠΟΛΟΙΠΑ ΠΕΛΑΤΩΝ", "ΑΤΤΙΚΗΣ ΠΡΟΘΕΣΜΙΑΚΗ ΛΙΑ", "PRONTI", "EUROBANK ΠΡΟΘΕΣΜΙΑΚΗ ΛΙΑ", "EUROBANK", "EUROBANK ΑΝΟΙΧΤΟΣ ΛΙΑ", "REVOLUT", "ΠΕΙΡΑΙΩΣ BUSSINES ΜΕΤΟΧΕΣ", "CASA", "VACANZE"];
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz-Nn1_bdeZjD0ouVDujWi4IZTvM2WdFxkTnHCQHpzavKTHEzfclHjwVuGHDaW-kOP_Ig/exec";
+    let chartM, chartY, chartP;
+    let isLocked = true;
 
-    function setType(v) { document.getElementById('type').value = v; document.getElementById('btn-income').className = 'type-option' + (v==='Έσοδο'?' active income':''); document.getElementById('btn-expense').className = 'type-option' + (v==='Έξοδο'?' active expense':''); }
+    function setType(v) {
+        document.getElementById('type').value = v;
+        document.getElementById('btn-income').className = 'type-option' + (v==='Έσοδο'?' active income':'');
+        document.getElementById('btn-expense').className = 'type-option' + (v==='Έξοδο'?' active expense':'');
+    }
 
-    function unlock() {
-        if(prompt("Κωδικός:") === "1234") {
-            document.getElementById('privateDashboard').style.display = 'block';
-            window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+    function toggleSection(id) {
+        const el = document.getElementById(id);
+        el.style.display = (el.style.display === 'block') ? 'none' : 'block';
+    }
+
+    function handleLock() {
+        if (isLocked) {
+            if (prompt("Κωδικός:") === "1234") {
+                isLocked = false;
+                document.getElementById('privateSection').style.display = 'block';
+                document.getElementById('lockBtn').innerText = "Lock 🔒";
+                document.getElementById('lockBtn').style.background = "#dc3545";
+                loadData();
+            }
+        } else {
+            isLocked = true;
+            document.getElementById('privateSection').style.display = 'none';
+            document.getElementById('lockBtn').innerText = "Unlock";
+            document.getElementById('lockBtn').style.background = "#6c757d";
         }
+    }
+
+    function drawBar(id, inc, exp) {
+        return new Chart(document.getElementById(id), {
+            type: 'bar',
+            data: { labels: ['Έσοδα', 'Έξοδα'], datasets: [{ data: [inc, exp], backgroundColor: ['#28a745', '#dc3545'] }] },
+            options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+        });
     }
 
     function loadData() {
         fetch(SCRIPT_URL).then(r => r.json()).then(data => {
+            // Lists
             document.getElementById('categoryList').innerHTML = data.categories.map(c => `<option value="${c}">`).join('');
             document.getElementById('bank').innerHTML = '<option value="" disabled selected>Τράπεζα</option>' + data.banks.map(b => `<option value="${b}">${b}</option>`).join('');
-            
-            // Γράφημα Μήνα (Φαίνεται πάντα)
-            if(chartM) chartM.destroy();
-            chartM = new Chart(document.getElementById('monthChart'), { type: 'bar', data: { labels: ['Έσοδα', 'Έξοδα'], datasets: [{ data: [data.stats.month.income, data.stats.month.expense], backgroundColor: ['#28a745', '#dc3545'] }] }, options: { indexAxis: 'y', plugins: { legend: { display: false } } } });
 
-            // Κρυφό Balance
-            document.getElementById('totalBal').innerText = "ΣΥΝΟΛΟ ΠΕΡΙΟΥΣΙΑΣ: " + data.balanceData.total.toLocaleString() + "€";
-            if(chartP) chartP.destroy();
-            chartP = new Chart(document.getElementById('pieChart'), { type: 'doughnut', data: { labels: data.balanceData.labels, datasets: [{ data: data.balanceData.currentValues, backgroundColor: ['#FF6384','#36A2EB','#FFCE56','#4BC0C0','#9966FF','#FF9F40','#8AC926','#1982C4','#6A4C93','#F15BB5','#FEE440','#00BBF9','#00F5D4','#9B5DE5','#F15BB5','#EE6C4D'] }] } });
+            // 2026 Charts (Always update month, year only if visible)
+            if(chartM) chartM.destroy(); chartM = drawBar('monthChart', data.stats.month.income, data.stats.month.expense);
+            if(chartY) chartY.destroy(); chartY = drawBar('yearChart', data.stats.year.income, data.stats.year.expense);
 
-            // Λίστα Αυξομειώσεων
-            let listHtml = "";
-            data.balanceData.labels.forEach((name, i) => {
-                const diff = data.balanceData.diffs[i];
-                const diffClass = diff > 0 ? 'diff-up' : (diff < 0 ? 'diff-down' : '');
-                const diffText = diff > 0 ? `+${diff.toLocaleString()}€` : (diff < 0 ? `${diff.toLocaleString()}€` : '0€');
-                listHtml += `<div class="balance-row"><span>${name}</span><span class="${diffClass}">${diffText}</span></div>`;
-            });
-            document.getElementById('diffList').innerHTML = listHtml;
+            // Balance (Only if unlocked)
+            if(!isLocked) {
+                document.getElementById('totalLabel').innerText = data.balanceData.total.toLocaleString() + "€";
+                if(chartP) chartP.destroy();
+                chartP = new Chart(document.getElementById('pieChart'), {
+                    type: 'doughnut',
+                    data: { labels: data.balanceData.labels, datasets: [{ data: data.balanceData.currentValues, backgroundColor: ['#FF6384','#36A2EB','#FFCE56','#4BC0C0','#9966FF','#FF9F40','#8AC926','#1982C4','#6A4C93','#F15BB5','#FEE440','#00BBF9','#00F5D4','#9B5DE5'] }] },
+                    options: { plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 9 } } } } }
+                });
 
-            // Inputs για Update
-            document.getElementById('balInputs').innerHTML = data.balanceData.labels.map((name, i) => `<div class="balance-item" style="display:flex; justify-content:space-between; font-size:0.7rem; margin-bottom:4px;"><span>${name.substring(0,18)}</span><input type="number" class="bal-val" value="${data.balanceData.currentValues[i]}" style="width:40%; padding:3px;"></div>`).join('');
+                let listHtml = "";
+                data.balanceData.labels.forEach((name, i) => {
+                    const diff = data.balanceData.diffs[i];
+                    const diffClass = diff > 0 ? 'diff-up' : (diff < 0 ? 'diff-down' : '');
+                    listHtml += `<div class="balance-row"><span>${name}</span><span class="${diffClass}">${diff > 0 ? '▲' : (diff < 0 ? '▼' : '•')} ${Math.abs(diff).toLocaleString()}€</span></div>`;
+                });
+                document.getElementById('diffList').innerHTML = listHtml;
+
+                document.getElementById('balInputs').innerHTML = data.balanceData.labels.map((name, i) => `
+                    <div class="balance-item" style="display:flex; justify-content:space-between; margin-bottom:5px; font-size:0.7rem;">
+                        <span>${name.substring(0,20)}</span>
+                        <input type="number" step="0.01" class="bal-val" value="${data.balanceData.currentValues[i]}" style="width:40%;">
+                    </div>`).join('');
+                
+                const mSel = document.getElementById('balMonth');
+                if(mSel.options.length === 0) {
+                    const months = ["ΙΑΝ", "ΦΕΒ", "ΜΑΡ", "ΑΠΡ", "ΜΑΪ", "ΙΟΥΝ", "ΙΟΥΛ", "ΑΥΓ", "ΣΕΠ", "ΟΚΤ", "ΝΟΕ", "ΔΕΚ"];
+                    mSel.innerHTML = months.map((m, i) => `<option value="${i}">${m}</option>`).join('');
+                }
+                mSel.value = new Date().getMonth();
+            }
         });
     }
 
     function saveBal() {
         const btn = document.getElementById('balBtn');
-        btn.disabled = true; btn.innerText = "Αποθήκευση...";
+        btn.disabled = true;
         const vals = Array.from(document.getElementsByClassName('bal-val')).map(i => parseFloat(i.value) || 0);
-        fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: "updateBalance", monthIndex: document.getElementById('balMonth').value, values: vals }) }).then(() => { alert("Ενημερώθηκε!"); loadData(); btn.disabled = false; btn.innerText = "Αποθήκευση"; });
+        fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: "updateBalance", monthIndex: document.getElementById('balMonth').value, values: vals }) }).then(() => { alert("OK!"); loadData(); btn.disabled = false; });
     }
 
     window.onload = loadData;
+
     document.getElementById('cashForm').onsubmit = function(e) {
         e.preventDefault();
-        fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ date: document.getElementById('date').value, amount: document.getElementById('amount').value, category: document.getElementById('category').value, bank: document.getElementById('bank').value, type: document.getElementById('type').value }) }).then(() => { location.reload(); });
+        const btn = document.getElementById('submitBtn');
+        btn.disabled = true;
+        fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ date: document.getElementById('date').value, amount: document.getElementById('amount').value, category: document.getElementById('category').value, bank: document.getElementById('bank').value, type: document.getElementById('type').value }) }).then(() => { 
+            document.getElementById('amount').value = ''; 
+            btn.disabled = false;
+            loadData(); 
+        });
     };
 </script>
 </body>
