@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cash Flow 2026</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #f4f4f9; display: flex; justify-content: center; padding: 20px; }
+        .container { background: white; padding: 2rem; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 100%; max-width: 400px; }
+        h2 { text-align: center; color: #333; margin-bottom: 1.5rem; }
+        .form-group { margin-bottom: 1rem; }
+        label { display: block; margin-bottom: 0.5rem; color: #666; font-weight: 500; }
+        input, select { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 16px; box-sizing: border-box; transition: border-color 0.3s; }
+        input:focus, select:focus { border-color: #007bff; outline: none; }
+        
+        /* Κουμπιά επιλογής Έσοδο/Έξοδο */
+        .type-selector { display: flex; gap: 10px; margin-bottom: 1rem; }
+        .type-option { flex: 1; padding: 10px; text-align: center; border: 1px solid #ddd; border-radius: 8px; cursor: pointer; font-weight: bold; }
+        .type-option.active.income { background-color: #d4edda; color: #155724; border-color: #c3e6cb; }
+        .type-option.active.expense { background-color: #f8d7da; color: #721c24; border-color: #f5c6cb; }
+
+        button.submit-btn { width: 100%; padding: 14px; background-color: #007bff; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 10px; }
+        button.submit-btn:hover { background-color: #0056b3; }
+        button.submit-btn:disabled { background-color: #ccc; }
+
+        .loader { display: none; text-align: center; margin-top: 10px; color: #007bff; }
+        .message { text-align: center; margin-top: 15px; font-weight: bold; display: none; }
+        .footer { text-align: center; font-size: 0.8rem; color: #aaa; margin-top: 20px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>💸 Ταμειακές Ροές</h2>
+    <form id="cashForm">
+        
+        <div class="type-selector">
+            <div class="type-option active expense" id="btn-expense" onclick="setType('Έξοδο')">Έξοδο</div>
+            <div class="type-option" id="btn-income" onclick="setType('Έσοδο')">Έσοδο</div>
+        </div>
+        <input type="hidden" id="type" name="type" value="Έξοδο">
+
+        <div class="form-group">
+            <label>Ημερομηνία</label>
+            <input type="date" id="date" required>
+        </div>
+
+        <div class="form-group">
+            <label>Ποσό (€)</label>
+            <input type="number" id="amount" step="0.01" placeholder="0.00" required inputmode="decimal">
+        </div>
+
+        <div class="form-group">
+            <label>Αιτιολογία / Κατηγορία</label>
+            <input list="categoryList" id="category" name="category" placeholder="Επίλεξε ή γράψε..." required autocomplete="off">
+            <datalist id="categoryList">
+                <option value="Φόρτωση...">
+            </datalist>
+        </div>
+
+        <div class="form-group">
+            <label>Τράπεζα / Μέσο Πληρωμής</label>
+            <select id="bank" required>
+                <option value="" disabled selected>Επίλεξε Τράπεζα</option>
+                <option value="Φόρτωση...">Φόρτωση...</option>
+            </select>
+        </div>
+
+        <button type="submit" class="submit-btn" id="submitBtn">Καταχώρηση</button>
+        <div class="loader" id="loader">Γίνεται αποθήκευση...</div>
+        <div class="message" id="message"></div>
+    </form>
+    <div class="footer">Connected to Sheet: 2026</div>
+</div>
+
+<script>
+    // ΤΟ URL ΣΟΥ:
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxudFXTdACWomjrXcIOXGkgYcVVvCpKbNUQz9Dcv2N_4pcZxEYG-ZHNWH5ZadIcrowjiw/exec";
+
+    document.getElementById('date').valueAsDate = new Date();
+
+    function setType(val) {
+        document.getElementById('type').value = val;
+        if(val === 'Έσοδο') {
+            document.getElementById('btn-income').classList.add('active', 'income');
+            document.getElementById('btn-expense').classList.remove('active', 'expense');
+        } else {
+            document.getElementById('btn-expense').classList.add('active', 'expense');
+            document.getElementById('btn-income').classList.remove('active', 'income');
+        }
+    }
+
+    window.onload = function() {
+        console.log("Φόρτωση δεδομένων...");
+        fetch(SCRIPT_URL)
+            .then(response => response.json())
+            .then(data => {
+                console.log("Λήφθηκαν:", data);
+                
+                const catList = document.getElementById('categoryList');
+                catList.innerHTML = ''; 
+                if (data.categories && data.categories.length > 0) {
+                    data.categories.forEach(cat => {
+                        let option = document.createElement('option');
+                        option.value = cat;
+                        catList.appendChild(option);
+                    });
+                }
+
+                const bankSelect = document.getElementById('bank');
+                bankSelect.innerHTML = '<option value="" disabled selected>Επίλεξε Τράπεζα</option>';
+                if (data.banks && data.banks.length > 0) {
+                    data.banks.forEach(bank => {
+                        let option = document.createElement('option');
+                        option.value = bank;
+                        option.text = bank;
+                        bankSelect.appendChild(option);
+                    });
+                } else {
+                    const defaultBanks = ["Μετρητά", "Πειραιώς", "Eurobank", "Alpha", "Εθνική", "IRIS", "Κάρτα"];
+                    defaultBanks.forEach(bank => {
+                        let option = document.createElement('option');
+                        option.value = bank;
+                        option.text = bank;
+                        bankSelect.appendChild(option);
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('Error loading lists:', error);
+                document.getElementById('bank').innerHTML = '<option value="Μετρητά">Μετρητά (Offline mode)</option>';
+            });
+    };
+
+    document.getElementById('cashForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const submitBtn = document.getElementById('submitBtn');
+        const loader = document.getElementById('loader');
+        const message = document.getElementById('message');
+        
+        submitBtn.disabled = true;
+        submitBtn.innerText = "Αποστολή...";
+        loader.style.display = 'block';
+        message.style.display = 'none';
+
+        const formData = {
+            date: document.getElementById('date').value,
+            amount: document.getElementById('amount').value,
+            category: document.getElementById('category').value,
+            bank: document.getElementById('bank').value,
+            type: document.getElementById('type').value
+        };
+
+        fetch(SCRIPT_URL, {
+            method: 'POST',
+            body: JSON.stringify(formData)
+        })
+        .then(response => response.json())
+        .then(data => {
+            loader.style.display = 'none';
+            submitBtn.disabled = false;
+            submitBtn.innerText = "Καταχώρηση";
+            
+            if(data.status === 'success') {
+                message.innerText = "✅ Επιτυχία!";
+                message.style.color = "green";
+                message.style.display = "block";
+                
+                document.getElementById('amount').value = '';
+                document.getElementById('category').value = '';
+                document.getElementById('date').valueAsDate = new Date(); 
+                
+                setTimeout(() => {
+                    message.style.display = 'none';
+                }, 3000);
+
+            } else {
+                throw new Error(data.message || "Άγνωστο σφάλμα");
+            }
+        })
+        .catch(error => {
+            loader.style.display = 'none';
+            submitBtn.disabled = false;
+            submitBtn.innerText = "Καταχώρηση";
+            message.innerText = "❌ Σφάλμα: " + error.message;
+            message.style.color = "red";
+            message.style.display = "block";
+        });
+    });
+</script>
+
+</body>
+</html>
