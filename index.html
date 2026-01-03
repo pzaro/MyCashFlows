@@ -30,7 +30,7 @@
 <body>
 
 <div class="container">
-    <h2>💸 Νέα Κίνηση</h2>
+    <h2>💸 Νέα Καταχώρηση</h2>
     <form id="cashForm">
         <input type="date" id="date" required style="margin-bottom:10px;">
         <input type="number" id="amount" step="0.01" placeholder="Ποσό €" required style="margin-bottom:10px;">
@@ -43,12 +43,12 @@
 <div class="container">
     <h2>📊 Στατιστικά 2026 <span class="toggle-link" onclick="toggleSection('yearSection')">+/- Έτος</span></h2>
     <div class="stat-box">
-        <div style="font-size: 0.75rem; font-weight: bold; color: #666;">ΜΗΝΑΣ</div>
+        <div style="font-size: 0.75rem; font-weight: bold; color: #666;">ΜΗΝΑΣ (Έσοδα/Έξοδα)</div>
         <div class="chart-container"><canvas id="monthChart"></canvas></div>
     </div>
     <div id="yearSection">
         <div class="stat-box">
-            <div style="font-size: 0.75rem; font-weight: bold; color: #666;">ΕΤΟΣ</div>
+            <div style="font-size: 0.75rem; font-weight: bold; color: #666;">ΣΥΝΟΛΟ ΕΤΟΥΣ</div>
             <div class="chart-container"><canvas id="yearChart"></canvas></div>
         </div>
     </div>
@@ -74,7 +74,7 @@
         </div>
 
         <div class="stat-box" style="background: #fafafa; border: 1px dashed #ccc;">
-            <div style="font-weight:bold; font-size:0.8rem; margin-bottom:10px;">ΕΠΕΞΕΡΓΑΣΙΑ ΤΙΜΩΝ</div>
+            <div style="font-weight:bold; font-size:0.8rem; margin-bottom:10px;">ΕΝΗΜΕΡΩΣΗ ΣΤΗΛΗΣ EXCEL</div>
             <div id="balInputs"></div>
             <button onclick="saveBal()" id="balBtn" class="submit-btn" style="background:#28a745; margin-top:10px;">Αποθήκευση</button>
         </div>
@@ -82,7 +82,9 @@
 </div>
 
 <script>
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzxFqOkFA0fIiDx-Kk4cro0mMxxf9egoBv7ttq_8RzguL6HgCL1p3anljr2cFkajZ1Vlw/exec";
+    // ΤΟ ΣΩΣΤΟ ΣΟΥ LINK
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzgjpKsUb0WrQHVISN8paD8lrFw4nACmHV6CVD_Xfsc0OpL-qvXd7yrdxVB7wcYUp9QeA/exec";
+    
     let chartM, chartY, chartP;
     let isLocked = true;
     let lastData = null;
@@ -114,8 +116,9 @@
         if(!lastData || isLocked) return;
         const monthIdx = parseInt(document.getElementById('balMonth').value);
         
-        // Offset +1 γιατί η στήλη 0 στο fullBalance είναι τα ονόματα (Στήλη A)
-        const colIdx = monthIdx + 1; 
+        // ΔΙΟΡΘΩΣΗ: 
+        // 0:Ονόματα(A), 1:Βάση(B), 2:Ιανουάριος(C)...
+        const colIdx = monthIdx + 2; 
         const prevColIdx = colIdx - 1; 
 
         let currentValues = [];
@@ -126,8 +129,7 @@
         lastData.fullBalance.forEach(row => {
             labels.push(row[0]);
             const cur = parseFloat(row[colIdx]) || 0;
-            // Σύγκριση με προηγούμενη στήλη. Αν είναι Ιανουάριος, συγκρίνει με το 0.
-            const prev = (colIdx > 1) ? (parseFloat(row[prevColIdx]) || 0) : 0;
+            const prev = parseFloat(row[prevColIdx]) || 0;
             currentValues.push(cur);
             prevValues.push(prev);
             total += cur;
@@ -201,7 +203,7 @@
         fetch(SCRIPT_URL, { 
             method: 'POST', 
             body: JSON.stringify({ action: "updateBalance", monthIndex: document.getElementById('balMonth').value, values: vals }) 
-        }).then(() => { alert("Αποθηκεύτηκε!"); loadData(); btn.disabled = false; });
+        }).then(() => { alert("Επιτυχής Αποθήκευση!"); loadData(); btn.disabled = false; });
     }
 
     window.onload = loadData;
@@ -223,4 +225,3 @@
 </script>
 </body>
 </html>
-
