@@ -53,12 +53,10 @@
 <div class="container">
     <h2>📊 Στατιστικά 2026 <span class="toggle-link" onclick="toggleSection('yearSection')">+/- Έτος</span></h2>
     <div class="stat-box">
-        <div style="font-size: 0.75rem; font-weight: bold; color: #666;">ΜΗΝΑΣ</div>
         <div class="chart-container"><canvas id="monthChart"></canvas></div>
     </div>
     <div id="yearSection">
         <div class="stat-box">
-            <div style="font-size: 0.75rem; font-weight: bold; color: #666;">ΕΤΟΣ</div>
             <div class="chart-container"><canvas id="yearChart"></canvas></div>
         </div>
     </div>
@@ -83,29 +81,26 @@
 
 <script>
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz-Nn1_bdeZjD0ouVDujWi4IZTvM2WdFxkTnHCQHpzavKTHEzfclHjwVuGHDaW-kOP_Ig/exec";
+    const accounts = ["ΑΤΤΙΚΗΣ ΠΡΟΘΕΣΜΙΑΚΗ ΠΑΝΟΣ", "ΑΤΤΙΚΗΣ CREDIA TARGET MATURITY", "ΑΤΤΙΚΗΣ ΑΝΟΙΧΤΟΣ", "ΠΕΙΡΑΙΩΣ BUSSINES", "EUROBANK ΑΝΟΙΧΤΟ ΠΑΝΟΣ", "ΕΠΙΤΑΓΕΣ", "ΑΝΟΙΧΤΑ ΥΠΟΛΟΙΠΑ ΠΕΛΑΤΩΝ", "ΑΤΤΙΚΗΣ ΠΡΟΘΕΣΜΙΑΚΗ ΛΙΑ", "PRONTI", "EUROBANK ΠΡΟΘΕΣΜΙΑΚΗ ΛΙΑ", "EUROBANK", "EUROBANK ΑΝΟΙΧΤΟΣ ΛΙΑ", "REVOLUT", "ΠΕΙΡΑΙΩΣ BUSSINES ΜΕΤΟΧΕΣ", "CASA", "VACANZE"];
+    
     let chartM, chartY, chartP;
     let isLocked = true;
     let lastData = null;
 
-    function buildInputs(data) {
+    // 1. Δημιουργία inputs αμέσως με το φόρτωμα της σελίδας
+    function initInputs() {
         const container = document.getElementById('balInputs');
-        const months = ["ΙΑΝ", "ΦΕΒ", "ΜΑΡ", "ΑΠΡ", "ΜΑΪ", "ΙΟΥΝ", "ΙΟΥΛ", "ΑΥΓ", "ΣΕΠ", "ΟΚΤ", "ΝΟΕ", "ΔΕΚ"];
-        const mSel = document.getElementById('balMonth');
+        container.innerHTML = accounts.map((name, i) => `
+            <div class="bal-input-row">
+                <span>${name}</span>
+                <input type="number" step="0.01" class="bal-val" data-index="${i}" value="0">
+            </div>
+        `).join('');
         
-        if(mSel.options.length === 0) {
-            mSel.innerHTML = months.map((m, i) => `<option value="${i}">${m}</option>`).join('');
-            mSel.value = new Date().getMonth();
-        }
-
-        // Δημιουργία inputs με βάση τα ονόματα που ήρθαν από το Sheet
-        if(data && data.balanceData) {
-            container.innerHTML = data.balanceData.labels.map((name, i) => `
-                <div class="bal-input-row">
-                    <span>${name}</span>
-                    <input type="number" step="0.01" class="bal-val" data-index="${i}" value="${data.balanceData.currentValues[i] || 0}">
-                </div>
-            `).join('');
-        }
+        const mSel = document.getElementById('balMonth');
+        const months = ["ΙΑΝ", "ΦΕΒ", "ΜΑΡ", "ΑΠΡ", "ΜΑΪ", "ΙΟΥΝ", "ΙΟΥΛ", "ΑΥΓ", "ΣΕΠ", "ΟΚΤ", "ΝΟΕ", "ΔΕΚ"];
+        mSel.innerHTML = months.map((m, i) => `<option value="${i}">${m}</option>`).join('');
+        mSel.value = new Date().getMonth();
     }
 
     function setType(v) {
@@ -137,10 +132,17 @@
     }
 
     function fillPrivateData(data) {
-        document.getElementById('totalLabel').innerText = data.balanceData.total.toLocaleString() + "€";
+        if(!data || !data.balanceData) return;
         
-        // Κατασκευή Inputs με τις τιμές του αρχείου
-        buildInputs(data);
+        document.getElementById('totalLabel').innerText = data.balanceData.total.toLocaleString() + "€";
+
+        // Ενημέρωση των ήδη υπαρχόντων inputs
+        const inputs = document.getElementsByClassName('bal-val');
+        for(let i=0; i<inputs.length; i++) {
+            if(data.balanceData.currentValues[i] !== undefined) {
+                inputs[i].value = data.balanceData.currentValues[i];
+            }
+        }
 
         // Γράφημα Πίτας
         if(chartP) chartP.destroy();
@@ -169,16 +171,12 @@
     function loadData() {
         fetch(SCRIPT_URL).then(r => r.json()).then(data => {
             lastData = data;
-            
-            // Ενημέρωση κατηγοριών και τραπεζών στη φόρμα
             document.getElementById('categoryList').innerHTML = data.categories.map(c => `<option value="${c}">`).join('');
             document.getElementById('bank').innerHTML = '<option value="" disabled selected>Τράπεζα</option>' + data.banks.map(b => `<option value="${b}">${b}</option>`).join('');
             
-            // Γραφήματα 2026
             if(chartM) chartM.destroy(); chartM = drawBar('monthChart', data.stats.month.income, data.stats.month.expense);
             if(chartY) chartY.destroy(); chartY = drawBar('yearChart', data.stats.year.income, data.stats.year.expense);
 
-            // Αν είναι ήδη ξεκλείδωτο, ανανέωσε και το Balance
             if(!isLocked) fillPrivateData(data);
         });
     }
@@ -196,9 +194,9 @@
         btn.disabled = true; btn.innerText = "Αποθήκευση...";
         
         const inputs = document.getElementsByClassName('bal-val');
-        const vals = new Array(inputs.length);
+        const vals = [];
         for(let i=0; i<inputs.length; i++) {
-            vals[i] = parseFloat(inputs[i].value) || 0;
+            vals.push(parseFloat(inputs[i].value) || 0);
         }
 
         fetch(SCRIPT_URL, { 
@@ -212,7 +210,11 @@
         });
     }
 
-    window.onload = loadData;
+    window.onload = () => {
+        initInputs(); // Δημιουργία inputs αμέσως
+        loadData();   // Φόρτωση δεδομένων
+    };
+    
     document.getElementById('date').valueAsDate = new Date();
 
     document.getElementById('cashForm').onsubmit = function(e) {
