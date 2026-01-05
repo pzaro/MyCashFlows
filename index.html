@@ -9,18 +9,27 @@
         body { font-family: -apple-system, sans-serif; background-color: #f0f2f5; display: flex; flex-direction: column; align-items: center; padding: 15px; margin: 0; }
         .container { background: white; padding: 1.2rem; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); width: 100%; max-width: 420px; margin-bottom: 15px; box-sizing: border-box; position: relative; }
         h2 { text-align: center; color: #1a1a1a; font-size: 1rem; border-bottom: 2px solid #f0f0f0; padding-bottom: 8px; margin-top: 0; }
-        .form-group { margin-bottom: 0.8rem; }
+        
+        /* Στυλ για τα κουμπιά Έσοδο/Έξοδο */
+        .type-selector { display: flex; gap: 10px; margin-bottom: 15px; }
+        .type-btn { flex: 1; padding: 12px; border-radius: 10px; border: 2px solid #ddd; background: white; cursor: pointer; font-weight: bold; transition: 0.3s; text-align: center; }
+        .type-btn.active-income { background-color: #28a745; color: white; border-color: #28a745; }
+        .type-btn.active-expense { background-color: #dc3545; color: white; border-color: #dc3545; }
+
         input, select { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 10px; font-size: 16px; box-sizing: border-box; }
-        .submit-btn { width: 100%; padding: 14px; background-color: #007bff; color: white; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; }
+        .submit-btn { width: 100%; padding: 14px; background-color: #007bff; color: white; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; margin-top: 10px; }
         .lock-btn { background-color: #6c757d; font-size: 0.8rem; padding: 5px 10px; border-radius: 5px; color: white; border: none; cursor: pointer; float: right; }
+        
         .stat-box { background: #fff; padding: 12px; border-radius: 12px; border: 1px solid #eee; margin-top: 10px; }
         .chart-container { position: relative; height: 110px; width: 100%; }
         .pie-container { position: relative; height: 220px; width: 100%; }
+        
         #privateSection { display: none; border-top: 3px solid #dc3545; padding-top: 15px; margin-top: 10px; clear: both; }
         .balance-row { display: flex; justify-content: space-between; font-size: 0.8rem; padding: 6px 0; border-bottom: 1px solid #f1f1f1; }
         .diff-up { color: #28a745; font-weight: bold; }
         .diff-down { color: #dc3545; font-weight: bold; }
         .total-val { text-align: center; font-size: 1.3rem; font-weight: bold; color: #dc3545; margin: 10px 0; }
+        
         .bal-input-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; font-size: 0.75rem; }
         .bal-input-row input { width: 110px; padding: 6px; text-align: right; border-radius: 6px; border: 1px solid #ddd; }
         .toggle-link { color: #007bff; font-size: 0.8rem; cursor: pointer; text-decoration: underline; font-weight: bold; }
@@ -31,9 +40,15 @@
 
 <div class="container">
     <h2>💸 Νέα Καταχώρηση</h2>
+    
+    <div class="type-selector">
+        <div id="btnExpense" class="type-btn active-expense" onclick="setType('Έξοδο')">ΕΞΟΔΟ</div>
+        <div id="btnIncome" class="type-btn" onclick="setType('Έσοδο')">ΕΣΟΔΟ</div>
+    </div>
+
     <form id="cashForm">
         <input type="date" id="date" required style="margin-bottom:10px;">
-        <input type="text" id="amount" placeholder="Ποσό € (π.χ. 10,50)" required style="margin-bottom:10px;" inputmode="decimal">
+        <input type="text" id="amount" placeholder="Ποσό €" required style="margin-bottom:10px;" inputmode="decimal">
         <input list="categoryList" id="category" placeholder="Αιτιολογία" required style="margin-bottom:10px;"><datalist id="categoryList"></datalist>
         <select id="bank" required style="margin-bottom:10px;"><option value="" disabled selected>Τράπεζα</option></select>
         <button type="submit" class="submit-btn" id="submitBtn">Καταχώρηση</button>
@@ -87,8 +102,22 @@
     let chartM, chartY, chartP;
     let isLocked = true;
     let lastData = null;
+    let currentType = 'Έξοδο'; // Προεπιλογή
 
-    // Συνάρτηση για τη μετατροπή κόμματος σε τελεία
+    function setType(type) {
+        currentType = type;
+        const btnExp = document.getElementById('btnExpense');
+        const btnInc = document.getElementById('btnIncome');
+        
+        if (type === 'Έσοδο') {
+            btnInc.classList.add('active-income');
+            btnExp.classList.remove('active-expense');
+        } else {
+            btnExp.classList.add('active-expense');
+            btnInc.classList.remove('active-income');
+        }
+    }
+
     function parseGreekFloat(val) {
         if (!val) return 0;
         let cleanVal = val.toString().replace(',', '.');
@@ -132,7 +161,7 @@
         lastData.fullBalance.forEach(row => {
             labels.push(row[0]);
             const cur = parseFloat(row[colIdx]) || 0;
-            const prev = (colIdx > 1) ? (parseFloat(row[prevColIdx]) || 0) : 0;
+            const prev = parseFloat(row[prevColIdx]) || 0;
             currentValues.push(cur);
             prevValues.push(prev);
             total += cur;
@@ -202,9 +231,7 @@
     function saveBal() {
         const btn = document.getElementById('balBtn');
         btn.disabled = true;
-        // Μετατροπή όλων των inputs από κόμμα σε τελεία πριν το save
         const vals = Array.from(document.getElementsByClassName('bal-val')).map(i => parseGreekFloat(i.value));
-        
         fetch(SCRIPT_URL, { 
             method: 'POST', 
             body: JSON.stringify({ action: "updateBalance", monthIndex: document.getElementById('balMonth').value, values: vals }) 
@@ -218,8 +245,6 @@
         e.preventDefault();
         const btn = document.getElementById('submitBtn');
         btn.disabled = true;
-        
-        // Μετατροπή του ποσού από κόμμα σε τελεία
         const finalAmount = parseGreekFloat(document.getElementById('amount').value);
 
         fetch(SCRIPT_URL, { 
@@ -229,7 +254,7 @@
                 amount: finalAmount, 
                 category: document.getElementById('category').value, 
                 bank: document.getElementById('bank').value, 
-                type: "Έξοδο" // Ή Έσοδο αναλόγως τη λογική σου
+                type: currentType 
             }) 
         }).then(() => { 
             document.getElementById('amount').value = ''; 
