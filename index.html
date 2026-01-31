@@ -4,6 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Finance Manager 2026</title>
+    
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Finance2026">
+    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/2845/2845705.png">
+    
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         body { font-family: -apple-system, sans-serif; background-color: #f0f2f5; display: flex; flex-direction: column; align-items: center; padding: 15px; margin: 0; }
@@ -42,7 +48,9 @@
         <input type="date" id="date" required style="margin-bottom:10px;">
         <input type="text" id="amount" placeholder="Ποσό €" required style="margin-bottom:10px;" inputmode="decimal">
         <input list="categoryList" id="category" placeholder="Αιτιολογία" required style="margin-bottom:10px;"><datalist id="categoryList"></datalist>
-        <select id="bank" required style="margin-bottom:10px;"><option value="" disabled selected>Τράπεζα</option></select>
+        <select id="bank" required style="margin-bottom:10px;">
+            <option value="" disabled selected>Τράπεζα</option>
+            <option value="Revolut">Revolut</option> </select>
         <button type="submit" class="submit-btn" id="submitBtn">Καταχώρηση</button>
     </form>
 </div>
@@ -67,7 +75,7 @@
 </div>
 
 <script>
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz_doscJ4Lbv2ccXUZJsMJ1WMMA0vHui6BSGEo00olQVzN0UZG4VopQPUq6D8FnBdQU3w/exec";
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzgjpKsUb0WrQHVISN8paD8lrFw4nACmHV6CVD_Xfsc0OpL-qvXd7yrdxVB7wcYUp9QeA/exec";
     let chartM, chartY, chartP, chartD, chartW;
     let isLocked = true, lastData = null, currentType = 'Έξοδο';
 
@@ -96,7 +104,12 @@
         fetch(SCRIPT_URL).then(r => r.json()).then(data => {
             lastData = data;
             document.getElementById('categoryList').innerHTML = data.categories.map(c => `<option value="${c}">`).join('');
-            document.getElementById('bank').innerHTML = '<option value="" disabled selected>Τράπεζα</option>' + data.banks.map(b => `<option value="${b}">${b}</option>`).join('');
+            
+            // Ενημέρωση λίστας τραπεζών δυναμικά (αν υπάρχουν στο DATA) + Revolut αν λείπει
+            let bankOptions = data.banks.map(b => `<option value="${b}">${b}</option>`).join('');
+            if(!data.banks.includes("Revolut")) bankOptions += '<option value="Revolut">Revolut</option>';
+            document.getElementById('bank').innerHTML = '<option value="" disabled selected>Τράπεζα</option>' + bankOptions;
+
             const mSel = document.getElementById('balMonth');
             if(mSel.options.length === 0) { const ms = ["ΙΑΝΟΥΑΡΙΟΣ", "ΦΕΒΡΟΥΑΡΙΟΣ", "ΜΑΡΤΙΟΣ", "ΑΠΡΙΛΙΟΣ", "ΜΑΪΟΣ", "ΙΟΥΝΙΟΣ", "ΙΟΥΛΙΟΣ", "ΑΥΓΟΥΣΤΟΣ", "ΣΕΠΤΕΜΒΡΙΟΣ", "ΟΚΤΩΒΡΙΟΣ", "ΝΟΕΜΒΡΙΟΣ", "ΔΕΚΕΜΒΡΙΟΣ"]; mSel.innerHTML = ms.map((m, i) => `<option value="${i}">${m}</option>`).join(''); mSel.value = new Date().getMonth(); }
             if(chartD) chartD.destroy(); chartD = drawBar('dayChart', data.stats.day.income, data.stats.day.expense);
@@ -114,6 +127,11 @@
     document.getElementById('date').valueAsDate = new Date();
     document.getElementById('cashForm').onsubmit = function(e) { e.preventDefault(); const btn = document.getElementById('submitBtn'); btn.disabled = true; fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ date: document.getElementById('date').value, amount: parseGreekFloat(document.getElementById('amount').value), category: document.getElementById('category').value, bank: document.getElementById('bank').value, type: currentType }) }).then(() => { document.getElementById('amount').value = ''; btn.disabled = false; loadData(); }); };
 </script>
+
+<script>
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('data:text/javascript;base64,' + btoa('self.addEventListener("fetch", function(e){});'));
+  }
+</script>
 </body>
 </html>
-
