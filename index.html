@@ -8,7 +8,9 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Finance2026">
-    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/2845/2845705.png">
+    
+    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/482/482529.png">
+    <link rel="icon" href="https://cdn-icons-png.flaticon.com/512/482/482529.png">
     
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
@@ -51,7 +53,7 @@
     </div>
     <form id="cashForm">
         <input type="date" id="date" required style="margin-bottom:10px;">
-        <input type="text" id="amount" placeholder="Ποσό € (π.χ. 12,50)" required style="margin-bottom:10px;" inputmode="decimal">
+        <input type="text" id="amount" placeholder="Ποσό €" required style="margin-bottom:10px;" inputmode="decimal">
         <input list="categoryList" id="category" placeholder="Αιτιολογία" required style="margin-bottom:10px;"><datalist id="categoryList"></datalist>
         <select id="bank" required style="margin-bottom:10px;">
             <option value="" disabled selected>Τράπεζα</option>
@@ -137,8 +139,8 @@
     function refreshPrivateUI() {
         if(!lastData || isLocked) return;
         const mIdx = parseInt(document.getElementById('balMonth').value);
-        const colIdx = mIdx + 2; // C=2 (Ιαν), D=3 (Φεβ)
-        const pColIdx = colIdx - 1; // B=1 (Βάση)
+        const colIdx = mIdx + 2; 
+        const pColIdx = colIdx - 1; 
 
         let cVals = [], pVals = [], labels = [], total = 0;
         lastData.fullBalance.forEach(row => { 
