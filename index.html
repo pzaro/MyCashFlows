@@ -1,18 +1,11 @@
-// Πρόσθεσε αυτή τη λογική μέσα στο doPost για την action "filterByDate"
-if (data.action === "filterByDate") {
-  const movesSheet = ss.getSheetByName(SHEET_NAME_MOVES);
-  const moves = movesSheet.getRange(2, 1, movesSheet.getLastRow() - 1, 6).getValues();
-  const start = new Date(data.startDate);
-  const end = new Date(data.endDate);
-  end.setHours(23, 59, 59, 999); // Συμπερίληψη όλης της τελευταίας ημέρας
-
-  let periodStats = { income: 0, expense: 0 };
-  moves.forEach(row => {
-    const rowDate = new Date(row[0]);
-    if (rowDate >= start && rowDate <= end) {
-      if (row[5] === "Έσοδο") periodStats.income += Number(row[2]);
-      if (row[5] === "Έξοδο") periodStats.expense += Number(row[2]);
-    }
-  });
-  return ContentService.createTextOutput(JSON.stringify(periodStats)).setMimeType(ContentService.MimeType.JSON);
-}
+<div class="container">
+    <h2>🔍 Αναζήτηση Περιόδου</h2>
+    <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+        <input type="date" id="startDate" style="font-size: 12px;">
+        <input type="date" id="endDate" style="font-size: 12px;">
+    </div>
+    <button onclick="filterPeriod()" class="submit-btn" style="background:#6a4c93; margin-bottom: 10px;">Υπολογισμός Περιόδου</button>
+    <div id="periodResult" style="display:none;" class="stat-box">
+        <div class="chart-container"><canvas id="periodChart"></canvas></div>
+    </div>
+</div>
