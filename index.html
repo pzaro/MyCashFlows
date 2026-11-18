@@ -46,7 +46,6 @@
         .bal-input-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; font-size: 0.75rem; }
         .bal-input-row input { width: 110px; padding: 8px; text-align: right; border-radius: 8px; border: 1px solid #ddd; }
         .toggle-link { color: var(--blue); font-size: 0.8rem; cursor: pointer; text-decoration: underline; font-weight: bold; }
-        #yearSection { display: none; margin-top: 15px; }
 
         /* chips */
         .chips { display:flex; flex-wrap:wrap; gap:6px; }
@@ -196,17 +195,7 @@
     <div id="dueList"></div>
 </div>
 
-<!-- ============ 3. ΣΤΑΤΙΣΤΙΚΑ ============ -->
-<div class="container">
-    <h2>📊 Στατιστικά <span class="toggle-link" onclick="toggleSection('yearSection')">+/- Έτος</span></h2>
-    <div class="stat-box"><div class="box-title">ΣΗΜΕΡΑ</div><div class="chart-container"><canvas id="dayChart"></canvas></div></div>
-    <div class="stat-box"><div class="box-title">ΕΒΔΟΜΑΔΑ (Δευτέρα έως σήμερα)</div><div class="chart-container"><canvas id="weekChart"></canvas></div></div>
-    <div class="stat-box"><div class="box-title">ΜΗΝΑΣ</div><div class="chart-container"><canvas id="monthChart"></canvas></div></div>
-    <div class="stat-box" style="border: 2px solid var(--blue);"><div class="box-title" style="color:var(--blue);">ΣΥΝΟΛΙΚΗ ΕΙΚΟΝΑ (ΜΗΝΑΣ)</div><div class="chart-container"><canvas id="summaryChart"></canvas></div></div>
-    <div id="yearSection"><div class="stat-box"><div class="box-title">ΕΤΟΣ</div><div class="chart-container"><canvas id="yearChart"></canvas></div></div></div>
-</div>
-
-<!-- ============ 4. ΑΝΑΛΥΣΗ ΑΝΑ ΠΡΟΣΩΠΟ ============ -->
+<!-- ============ 3. ΑΝΑΛΥΣΗ ΑΝΑ ΠΡΟΣΩΠΟ ============ -->
 <div class="container">
     <h2>👥 Ανάλυση ανά πρόσωπο</h2>
 
@@ -274,7 +263,7 @@
     </div>
 </div>
 
-<!-- ============ 5. BALANCE ============ -->
+<!-- ============ 4. BALANCE ============ -->
 <div class="container">
     <button class="lock-btn" id="lockBtn" onclick="handleLock()">Unlock</button>
     <h2 style="text-align:left;">🔒 Balance</h2>
@@ -592,7 +581,6 @@ function loadData(retry) {
         const mSel = document.getElementById('balMonth');
         if (mSel.options.length === 0) { mSel.innerHTML = MONTHS.map((m, i) => `<option value="${i}">${m}</option>`).join(''); mSel.value = new Date().getMonth(); }
 
-        renderStats();
         renderDue();
         renderAnalysis();
         if (!isLocked) refreshPrivateUI();
@@ -609,54 +597,13 @@ function post(payload) {
         .then(r => r.json().catch(() => ({ ok: true })));
 }
 
-/* ================= ΣΤΑΤΙΣΤΙΚΑ ================= */
+/* ================= ΒΟΗΘΗΤΙΚΑ ΓΡΑΦΗΜΑΤΩΝ ================= */
 function sumBy(list) {
     let inc = 0, exp = 0;
     list.forEach(t => t.type === 'Έσοδο' ? inc += t.amount : exp += t.amount);
     return { inc, exp };
 }
-function renderStats() {
-    const now = new Date();
-    const today = ymd(now);
-    const monday = new Date(now); monday.setDate(now.getDate() - ((now.getDay() + 6) % 7));
-    const wStart = ymd(monday);
-    const mKey = ym(now), yKey = String(now.getFullYear());
-
-    const d = sumBy(TX.filter(t => t.date === today));
-    const w = sumBy(TX.filter(t => t.date >= wStart && t.date <= today));
-    const m = sumBy(TX.filter(t => t.date.startsWith(mKey)));
-    const y = sumBy(TX.filter(t => t.date.startsWith(yKey)));
-
-    drawBar('dayChart', d.inc, d.exp);
-    drawBar('weekChart', w.inc, w.exp);
-    drawBar('monthChart', m.inc, m.exp);
-    drawBar('yearChart', y.inc, y.exp);
-    drawSummaryBar('summaryChart', m.inc, m.exp, m.inc - m.exp);
-}
 function mk(id, cfg) { if (charts[id]) charts[id].destroy(); charts[id] = new Chart(document.getElementById(id), cfg); return charts[id]; }
-
-function drawBar(id, inc, exp) {
-    return mk(id, {
-        type: 'bar',
-        data: { labels: ['Έσοδα', 'Έξοδα'], datasets: [{ data: [inc, exp], backgroundColor: ['#28a745', '#dc3545'], borderRadius: 5 }] },
-        options: {
-            indexAxis: 'y', responsive: true, maintainAspectRatio: false,
-            plugins: { legend: { display: false }, datalabels: { color: '#000', anchor: 'end', align: 'right', offset: 5, formatter: v => eur(v), font: { weight: 'bold', size: 10 } } },
-            scales: { x: { display: false, grace: '25%' }, y: { grid: { display: false } } }
-        }
-    });
-}
-function drawSummaryBar(id, inc, exp, diff) {
-    return mk(id, {
-        type: 'bar',
-        data: { labels: ['Έσοδα', 'Έξοδα', 'Υπόλοιπο'], datasets: [{ data: [inc, exp, diff], backgroundColor: ['#28a745', '#dc3545', diff >= 0 ? '#007bff' : '#ff8800'], borderRadius: 5 }] },
-        options: {
-            responsive: true, maintainAspectRatio: false,
-            plugins: { legend: { display: false }, datalabels: { color: '#000', anchor: 'end', align: 'top', formatter: v => eur(v), font: { weight: 'bold', size: 10 } } },
-            scales: { y: { display: false, grace: '20%' }, x: { grid: { display: false } } }
-        }
-    });
-}
 
 /* ================= ΠΑΓΙΑ ΜΗΝΑ ================= */
 function prevMonths(key, n) {
