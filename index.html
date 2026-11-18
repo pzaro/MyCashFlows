@@ -4,78 +4,258 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Finance Manager 2026</title>
-    
+
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Finance2026">
-    
+
     <link rel="apple-touch-icon" href="https://github.com/pzaro/MyCashFlows/blob/main/Finance%20Manager%20Pzaro.jpg?raw=true">
     <link rel="icon" href="https://github.com/pzaro/MyCashFlows/blob/main/Finance%20Manager%20Pzaro.jpg?raw=true">
-    
+
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js" defer></script>
 
     <style>
+        :root { --navy:#1d3557; --green:#28a745; --red:#dc3545; --blue:#007bff; --muted:#6c757d; }
         body { font-family: -apple-system, sans-serif; background-color: #f0f2f5; display: flex; flex-direction: column; align-items: center; padding: 15px; margin: 0; -webkit-tap-highlight-color: transparent; }
         .container { background: white; padding: 1.2rem; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); width: 100%; max-width: 420px; margin-bottom: 15px; box-sizing: border-box; position: relative; }
         h2 { text-align: center; color: #1a1a1a; font-size: 1rem; border-bottom: 2px solid #f0f0f0; padding-bottom: 8px; margin-top: 0; }
-        .type-selector { display: flex; gap: 10px; margin-bottom: 15px; }
+        .lbl { display:block; font-size: 0.7rem; font-weight: bold; color: #555; margin: 10px 0 5px; letter-spacing: .3px; }
+        .type-selector { display: flex; gap: 10px; margin-bottom: 5px; }
         .type-btn { flex: 1; padding: 12px; border-radius: 10px; border: 2px solid #ddd; background: white; cursor: pointer; font-weight: bold; transition: 0.3s; text-align: center; font-size: 0.9rem; }
-        .active-income { background-color: #28a745; color: white; border-color: #28a745; }
-        .active-expense { background-color: #dc3545; color: white; border-color: #dc3545; }
-        input, select { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 10px; font-size: 16px; box-sizing: border-box; background: #fff; }
-        .submit-btn { width: 100%; padding: 14px; background-color: #007bff; color: white; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; margin-top: 10px; }
-        .lock-btn { background-color: #6c757d; font-size: 0.8rem; padding: 6px 12px; border-radius: 8px; color: white; border: none; cursor: pointer; float: right; }
+        .active-income { background-color: var(--green); color: white; border-color: var(--green); }
+        .active-expense { background-color: var(--red); color: white; border-color: var(--red); }
+        input, select { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 10px; font-size: 16px; box-sizing: border-box; background: #fff; color:#1a1a1a; }
+        .amount-input { font-size: 1.4rem; font-weight: bold; text-align: center; }
+        .row2 { display:flex; gap:8px; }
+        .row2 > div { flex:1; min-width:0; }
+        .submit-btn { width: 100%; padding: 14px; background-color: var(--blue); color: white; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; margin-top: 14px; font-size: 1rem; }
+        .submit-btn:disabled { opacity: .6; }
+        .lock-btn { background-color: var(--muted); font-size: 0.8rem; padding: 6px 12px; border-radius: 8px; color: white; border: none; cursor: pointer; float: right; }
         .stat-box { background: #fff; padding: 12px; border-radius: 12px; border: 1px solid #eee; margin-top: 10px; }
+        .box-title { font-size: 0.7rem; font-weight: bold; margin-bottom: 6px; color:#333; }
         .chart-container { position: relative; height: 120px; width: 100%; }
         .pie-container { position: relative; height: 220px; width: 100%; }
-        #privateSection { display: none; border-top: 3px solid #dc3545; padding-top: 15px; margin-top: 10px; clear: both; }
+        .tall-container { position: relative; height: 200px; width: 100%; }
+        #privateSection { display: none; border-top: 3px solid var(--red); padding-top: 15px; margin-top: 10px; clear: both; }
         .balance-row { display: flex; justify-content: space-between; font-size: 0.8rem; padding: 6px 0; border-bottom: 1px solid #f1f1f1; }
-        .diff-up { color: #28a745; font-weight: bold; }
-        .diff-down { color: #dc3545; font-weight: bold; }
-        .total-val { text-align: center; font-size: 1.3rem; font-weight: bold; color: #dc3545; margin: 10px 0; }
+        .diff-up { color: var(--green); font-weight: bold; }
+        .diff-down { color: var(--red); font-weight: bold; }
+        .total-val { text-align: center; font-size: 1.3rem; font-weight: bold; color: var(--red); margin: 10px 0; }
         .bal-input-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; font-size: 0.75rem; }
         .bal-input-row input { width: 110px; padding: 8px; text-align: right; border-radius: 8px; border: 1px solid #ddd; }
-        .toggle-link { color: #007bff; font-size: 0.8rem; cursor: pointer; text-decoration: underline; font-weight: bold; }
+        .toggle-link { color: var(--blue); font-size: 0.8rem; cursor: pointer; text-decoration: underline; font-weight: bold; }
         #yearSection { display: none; margin-top: 15px; }
+
+        /* chips */
+        .chips { display:flex; flex-wrap:wrap; gap:6px; }
+        .chip { padding: 8px 11px; border-radius: 20px; border: 1.5px solid #d6d9de; background:#fff; font-size: 0.75rem; font-weight: bold; cursor:pointer; color:#333; user-select:none; }
+        .chip.on { color:#fff; border-color: transparent; }
+        .chip.small { padding: 6px 9px; font-size: 0.7rem; }
+        .chip.plain.on { background: var(--navy); }
+
+        /* kpis */
+        .kpis { display:flex; gap:8px; margin-top:12px; }
+        .kpi { flex:1; background:#f7f8fa; border-radius:10px; padding:8px 6px; text-align:center; }
+        .kpi .k { font-size:0.6rem; color:#666; font-weight:bold; }
+        .kpi .v { font-size:0.95rem; font-weight:bold; margin-top:3px; }
+
+        /* tables & lists */
+        .tbl { width:100%; border-collapse: collapse; font-size: 0.75rem; margin-top:8px; }
+        .tbl td { padding:6px 2px; border-bottom:1px solid #f1f1f1; }
+        .tbl td.r { text-align:right; white-space:nowrap; }
+        .dot { display:inline-block; width:9px; height:9px; border-radius:50%; margin-right:6px; vertical-align:middle; }
+        .tx { display:flex; align-items:center; gap:8px; padding:8px 0; border-bottom:1px solid #f1f1f1; font-size:0.75rem; }
+        .tx .main { flex:1; min-width:0; }
+        .tx .t1 { font-weight:bold; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+        .tx .t2 { color:#777; font-size:0.65rem; margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+        .tx .amt { font-weight:bold; white-space:nowrap; }
+        .tx .del { border:none; background:none; color:#bbb; font-size:1rem; cursor:pointer; padding:2px 4px; }
+        .badge { display:inline-block; font-size:0.6rem; padding:1px 6px; border-radius:8px; color:#fff; font-weight:bold; vertical-align:middle; }
+        .guess { color:#b08900; font-size:0.6rem; }
+        .muted { color:#888; font-size:0.7rem; text-align:center; padding:8px 0; }
+
+        /* due list */
+        .due { display:flex; align-items:center; gap:8px; padding:8px 0; border-bottom:1px solid #f1f1f1; font-size:0.75rem; }
+        .due .st { width:22px; text-align:center; font-size:0.95rem; }
+        .due .main { flex:1; min-width:0; }
+        .due button { border:1px solid var(--blue); color:var(--blue); background:#fff; border-radius:8px; font-size:0.65rem; font-weight:bold; padding:5px 8px; cursor:pointer; }
+        .progress { height:8px; background:#eee; border-radius:6px; overflow:hidden; margin:8px 0 4px; }
+        .progress > div { height:100%; background: var(--green); }
+
+        #toast { position:fixed; bottom:20px; left:50%; transform:translateX(-50%); background:#1a1a1a; color:#fff; padding:10px 16px; border-radius:10px; font-size:0.85rem; opacity:0; transition:opacity .3s; pointer-events:none; z-index:10; max-width:90%; text-align:center; }
+        #toast.show { opacity:.92; }
+        /* οθόνη εισόδου (ίδια με ZARKOLIA LAB) */
+        #loginOverlay { position: fixed; top:0; left:0; width:100%; height:100%; background: linear-gradient(150deg,#0f1f5c,#1a3272,#0f2040); z-index:9999; display:flex; flex-direction:column; justify-content:center; align-items:center; }
+        #loginBox, #otpBox { background:rgba(255,255,255,.06); backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px); border:1px solid rgba(255,255,255,.15); padding:40px 32px; border-radius:24px; text-align:center; width:88%; max-width:360px; box-shadow:0 30px 60px rgba(0,0,0,.4); box-sizing:border-box; }
+        .logo-text { font-size:1.8em; font-weight:800; color:white; letter-spacing:4px; text-transform:uppercase; margin-bottom:4px; }
+        .logo-sub { color:rgba(255,255,255,.5); font-size:.85em; font-weight:500; letter-spacing:2px; margin-bottom:28px; text-transform:uppercase; }
+        .login-input { padding:16px 18px; font-size:1.3em; font-family:monospace; width:100%; margin-bottom:16px; border:1.5px solid rgba(255,255,255,.2); border-radius:12px; text-align:center; background:rgba(255,255,255,.08); color:white; outline:none; }
+        .login-input::placeholder { color:rgba(255,255,255,.3); font-family:-apple-system,sans-serif; font-size:.8em; letter-spacing:0; }
+        .login-input:focus { border-color:#e8a020; }
+        #passwordInput { -webkit-text-security:disc; }
+        #otpInput { font-size:1.8em; letter-spacing:8px; }
+        .login-btn { background:#e8a020; color:white; border:none; padding:16px; width:100%; border-radius:12px; font-size:1.05em; font-weight:700; cursor:pointer; letter-spacing:1.5px; text-transform:uppercase; }
+        .login-btn:active { transform:scale(.97); background:#c8880e; }
+        .login-back { background:transparent; color:rgba(255,255,255,.5); border:1px solid rgba(255,255,255,.2); padding:10px; width:100%; border-radius:12px; font-size:.85em; cursor:pointer; margin-top:12px; }
+        .login-logo { width:84px; height:84px; border-radius:20px; margin-bottom:16px; box-shadow:0 10px 25px rgba(0,0,0,.35); }
+        #loading { font-size:0.7rem; color:#888; text-align:center; margin-bottom:8px; }
     </style>
 </head>
 <body>
 
-<div class="container">
+<div id="loginOverlay">
+    <div id="loginBox">
+        <img class="login-logo" src="https://github.com/pzaro/MyCashFlows/blob/main/Finance%20Manager%20Pzaro.jpg?raw=true" alt="">
+        <div class="logo-text">P.ZARO'S</div>
+        <div class="logo-sub">Finance Manager</div>
+        <input type="password" id="passwordInput" class="login-input" placeholder="PIN" inputmode="numeric" autocomplete="off">
+        <button class="login-btn" onclick="checkLogin()">ΕΙΣΟΔΟΣ</button>
+    </div>
+    <div id="otpBox" style="display:none;">
+        <div class="logo-text">P.ZARO'S</div>
+        <div class="logo-sub" style="margin-bottom:12px;">Επαλήθευση εισόδου</div>
+        <p style="color:rgba(255,255,255,.75); font-size:.9em; margin-bottom:20px; font-weight:500;">
+            Στάλθηκε κωδικός μιας χρήσης στο email σου.<br>Ισχύει για <span id="otpTimer" style="color:#e8a020; font-weight:800;">15:00</span>
+        </p>
+        <input type="text" id="otpInput" class="login-input" placeholder="6 ψηφία" maxlength="6" inputmode="numeric" autocomplete="one-time-code">
+        <button class="login-btn" onclick="verifyOTP()">ΕΠΑΛΗΘΕΥΣΗ</button>
+        <button class="login-back" onclick="resetLogin()">← Πίσω</button>
+    </div>
+</div>
+
+<div id="toast"></div>
+<div id="loading">Φόρτωση δεδομένων…</div>
+
+<!-- ============ 1. ΝΕΑ ΚΑΤΑΧΩΡΗΣΗ ============ -->
+<div class="container" id="formBox">
     <h2>💸 Νέα Καταχώρηση</h2>
     <div class="type-selector">
         <div id="btnExpense" class="type-btn active-expense" onclick="setType('Έξοδο')">ΕΞΟΔΟ</div>
         <div id="btnIncome" class="type-btn" onclick="setType('Έσοδο')">ΕΣΟΔΟ</div>
     </div>
-    <form id="cashForm">
-        <input type="date" id="date" required style="margin-bottom:10px;">
-        <input type="text" id="amount" placeholder="Ποσό €" required style="margin-bottom:10px;" inputmode="decimal">
-        <input list="categoryList" id="category" placeholder="Αιτιολογία" required style="margin-bottom:10px;"><datalist id="categoryList"></datalist>
-        <select id="bank" required style="margin-bottom:10px;">
-            <option value="" disabled selected>Τράπεζα</option>
-            <option value="Revolut">Revolut</option>
-            <option value="Μετρητά">Μετρητά</option>
-            <option value="Πειραιώς">Πειραιώς</option>
-            <option value="Eurobank">Eurobank</option>
-            <option value="Alpha">Alpha</option>
-            <option value="Εθνική">Εθνική</option>
-        </select>
+    <form id="cashForm" autocomplete="off">
+        <span class="lbl">ΠΡΟΣΩΠΟ</span>
+        <div class="chips" id="personChips"></div>
+
+        <span class="lbl">ΠΟΣΟ €</span>
+        <input type="text" id="amount" class="amount-input" placeholder="0,00" required inputmode="decimal">
+
+        <span class="lbl">ΑΙΤΙΟΛΟΓΙΑ</span>
+        <select id="category" required></select>
+        <input type="text" id="customCategory" placeholder="Γράψε νέα αιτιολογία" style="display:none; margin-top:8px;">
+
+        <div id="refWrap">
+            <span class="lbl">ΜΗΝΑΣ ΑΝΑΦΟΡΑΣ</span>
+            <input type="month" id="refMonth">
+        </div>
+
+        <span class="lbl">ΣΗΜΕΙΩΣΗ (προαιρετικά)</span>
+        <input list="noteList" id="note" placeholder="π.χ. COSMOTE κινητό, LIDL, Opel">
+        <datalist id="noteList"></datalist>
+
+        <div class="row2">
+            <div><span class="lbl">ΗΜΕΡΟΜΗΝΙΑ</span><input type="date" id="date" required></div>
+            <div><span class="lbl">ΤΡΑΠΕΖΑ / ΜΕΣΟ</span>
+                <select id="bank" required>
+                    <option value="" disabled selected>Επιλογή</option>
+                    <option value="Revolut">Revolut</option>
+                    <option value="Μετρητά">Μετρητά</option>
+                    <option value="Πειραιώς">Πειραιώς</option>
+                    <option value="Eurobank">Eurobank</option>
+                    <option value="Alpha">Alpha</option>
+                    <option value="Εθνική">Εθνική</option>
+                </select>
+            </div>
+        </div>
         <button type="submit" class="submit-btn" id="submitBtn">Καταχώρηση</button>
     </form>
 </div>
 
+<!-- ============ 2. ΠΑΓΙΑ ΜΗΝΑ ============ -->
 <div class="container">
-    <h2>📊 Στατιστικά 2026 <span class="toggle-link" onclick="toggleSection('yearSection')">+/- Έτος</span></h2>
-    <div class="stat-box"><div style="font-size: 0.7rem; font-weight: bold; margin-bottom: 5px;">ΣΗΜΕΡΑ</div><div class="chart-container"><canvas id="dayChart"></canvas></div></div>
-    <div class="stat-box"><div style="font-size: 0.7rem; font-weight: bold; margin-bottom: 5px;">ΕΒΔΟΜΑΔΑ</div><div class="chart-container"><canvas id="weekChart"></canvas></div></div>
-    <div class="stat-box"><div style="font-size: 0.7rem; font-weight: bold; margin-bottom: 5px;">ΜΗΝΑΣ</div><div class="chart-container"><canvas id="monthChart"></canvas></div></div>
-    
-    <div class="stat-box" style="border: 2px solid #007bff;"><div style="font-size: 0.7rem; font-weight: bold; color: #007bff; margin-bottom: 5px;">ΣΥΝΟΛΙΚΗ ΕΙΚΟΝΑΣ (ΜΗΝΑΣ)</div><div class="chart-container"><canvas id="summaryChart"></canvas></div></div>
-
-    <div id="yearSection"><div class="stat-box"><div style="font-size: 0.7rem; font-weight: bold; margin-bottom: 5px;">ΕΤΟΣ</div><div class="chart-container"><canvas id="yearChart"></canvas></div></div></div>
+    <h2>📌 Πάγια μήνα</h2>
+    <input type="month" id="dueMonth" onchange="renderDue()">
+    <div class="progress"><div id="dueBar" style="width:0%"></div></div>
+    <div id="dueSummary" style="font-size:0.7rem; color:#555; text-align:center;"></div>
+    <div id="dueList"></div>
 </div>
 
+<!-- ============ 3. ΣΤΑΤΙΣΤΙΚΑ ============ -->
+<div class="container">
+    <h2>📊 Στατιστικά <span class="toggle-link" onclick="toggleSection('yearSection')">+/- Έτος</span></h2>
+    <div class="stat-box"><div class="box-title">ΣΗΜΕΡΑ</div><div class="chart-container"><canvas id="dayChart"></canvas></div></div>
+    <div class="stat-box"><div class="box-title">ΕΒΔΟΜΑΔΑ (Δευτέρα έως σήμερα)</div><div class="chart-container"><canvas id="weekChart"></canvas></div></div>
+    <div class="stat-box"><div class="box-title">ΜΗΝΑΣ</div><div class="chart-container"><canvas id="monthChart"></canvas></div></div>
+    <div class="stat-box" style="border: 2px solid var(--blue);"><div class="box-title" style="color:var(--blue);">ΣΥΝΟΛΙΚΗ ΕΙΚΟΝΑ (ΜΗΝΑΣ)</div><div class="chart-container"><canvas id="summaryChart"></canvas></div></div>
+    <div id="yearSection"><div class="stat-box"><div class="box-title">ΕΤΟΣ</div><div class="chart-container"><canvas id="yearChart"></canvas></div></div></div>
+</div>
+
+<!-- ============ 4. ΑΝΑΛΥΣΗ ΑΝΑ ΠΡΟΣΩΠΟ ============ -->
+<div class="container">
+    <h2>👥 Ανάλυση ανά πρόσωπο</h2>
+
+    <span class="lbl" style="margin-top:0;">ΠΡΟΣΩΠΟ</span>
+    <div class="chips" id="anPersonChips"></div>
+
+    <span class="lbl">ΔΙΑΣΤΗΜΑ</span>
+    <div class="chips" id="rangeChips"></div>
+    <div class="row2" id="customRange" style="display:none; margin-top:8px;">
+        <div><input type="date" id="fromDate" onchange="renderAnalysis()"></div>
+        <div><input type="date" id="toDate" onchange="renderAnalysis()"></div>
+    </div>
+
+    <div class="row2" style="margin-top:8px;">
+        <div>
+            <span class="lbl">ΒΑΣΗ ΧΡΟΝΟΥ</span>
+            <select id="basis" onchange="renderAnalysis()">
+                <option value="date">Ημερομηνία πληρωμής</option>
+                <option value="ref">Μήνας αναφοράς</option>
+            </select>
+        </div>
+        <div>
+            <span class="lbl">ΕΙΔΟΣ</span>
+            <select id="anType" onchange="renderAnalysis()">
+                <option value="Έξοδο">Έξοδα</option>
+                <option value="Έσοδο">Έσοδα</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="kpis">
+        <div class="kpi"><div class="k">ΕΞΟΔΑ</div><div class="v" id="kExp" style="color:var(--red)">0€</div></div>
+        <div class="kpi"><div class="k">ΕΣΟΔΑ</div><div class="v" id="kInc" style="color:var(--green)">0€</div></div>
+        <div class="kpi"><div class="k">ΚΙΝΗΣΕΙΣ</div><div class="v" id="kCnt">0</div></div>
+    </div>
+    <div id="rangeLabel" class="muted"></div>
+
+    <div class="stat-box" id="perPersonBox">
+        <div class="box-title">ΣΥΝΟΛΑ ΑΝΑ ΠΡΟΣΩΠΟ</div>
+        <div class="tall-container"><canvas id="personChart"></canvas></div>
+    </div>
+
+    <div class="stat-box">
+        <div class="box-title">ΚΑΤΑΝΟΜΗ ΑΝΑ ΑΙΤΙΟΛΟΓΙΑ</div>
+        <div class="pie-container"><canvas id="catChart"></canvas></div>
+        <table class="tbl" id="catTable"></table>
+    </div>
+
+    <div class="stat-box">
+        <div class="box-title">ΠΟΡΕΙΑ ΑΝΑ ΜΗΝΑ</div>
+        <div class="tall-container"><canvas id="trendChart"></canvas></div>
+    </div>
+
+    <div class="stat-box">
+        <div class="box-title">ΚΙΝΗΣΕΙΣ ΔΙΑΣΤΗΜΑΤΟΣ</div>
+        <input type="text" id="txSearch" placeholder="Αναζήτηση σε αιτιολογία ή σημείωση" oninput="renderTxList()" style="padding:9px; font-size:14px;">
+        <div id="txList"></div>
+        <div id="txMore" class="toggle-link" style="display:block; text-align:center; margin-top:8px;" onclick="showAllTx=!showAllTx; renderTxList();"></div>
+        <div class="guess" style="margin-top:8px;">* πρόσωπο ή αιτιολογία που βγήκε αυτόματα από το κείμενο παλιάς εγγραφής</div>
+    </div>
+</div>
+
+<!-- ============ 5. BALANCE ============ -->
 <div class="container">
     <button class="lock-btn" id="lockBtn" onclick="handleLock()">Unlock</button>
     <h2 style="text-align:left;">🔒 Balance</h2>
@@ -83,109 +263,623 @@
         <div class="form-group"><label style="font-size:0.8rem; font-weight:bold;">ΜΗΝΑΣ ΕΙΚΟΝΑΣ:</label><select id="balMonth" onchange="refreshPrivateUI()"></select></div>
         <div class="total-val" id="totalLabel">0€</div>
         <div class="stat-box"><div class="pie-container"><canvas id="pieChart"></canvas></div><div id="diffList" style="margin-top:15px;"></div></div>
-        <div class="stat-box" style="background: #fafafa; border: 1px dashed #ccc;"><div style="font-weight:bold; font-size:0.8rem; margin-bottom:10px;">ΕΠΕΞΕΡΓΑΣΙΑ ΣΤΟ EXCEL</div><div id="balInputs"></div><button onclick="saveBal()" id="balBtn" class="submit-btn" style="background:#28a745;">Αποθήκευση</button></div>
+        <div class="stat-box" style="background: #fafafa; border: 1px dashed #ccc;"><div style="font-weight:bold; font-size:0.8rem; margin-bottom:10px;">ΕΠΕΞΕΡΓΑΣΙΑ ΣΤΟ EXCEL</div><div id="balInputs"></div><button onclick="saveBal()" id="balBtn" class="submit-btn" style="background:var(--green);">Αποθήκευση</button></div>
     </div>
 </div>
 
 <script>
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz_doscJ4Lbv2ccXUZJsMJ1WMMA0vHui6BSGEo00olQVzN0UZG4VopQPUq6D8FnBdQU3w/exec";
-    Chart.register(ChartDataLabels); // Ενεργοποίηση των αριθμητικών ετικετών
+/* ================= ΡΥΘΜΙΣΕΙΣ ================= */
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyqTntyiuUPdS2k84gal1cI52P2yrRbJ3fH-eV6UW3PJSA4litNirs4pdP5lNbZ-qDR4Q/exec";
+Chart.register(ChartDataLabels);
 
-    let chartM, chartY, chartP, chartD, chartW, chartS;
-    let isLocked = true, lastData = null, currentType = 'Έξοδο';
+const PERSONS = ['ΠΑΝΑΓΙΩΤΗΣ', 'ΒΑΣΙΛΕΙΑ', 'ΣΠΙΤΙ', 'ΑΡΙΣΤΟΤΕΛΗΣ', 'ΚΩΝΣΤΑΝΤΙΝΟΣ'];
+const NO_PERSON = 'ΑΚΑΘΟΡΙΣΤΟ';
+const PERSON_COLORS = { 'ΠΑΝΑΓΙΩΤΗΣ':'#1d3557', 'ΒΑΣΙΛΕΙΑ':'#e76f51', 'ΣΠΙΤΙ':'#2a9d8f', 'ΑΡΙΣΤΟΤΕΛΗΣ':'#f4a261', 'ΚΩΝΣΤΑΝΤΙΝΟΣ':'#7b2cbf', 'ΑΚΑΘΟΡΙΣΤΟ':'#adb5bd' };
+const MONTHS = ["ΙΑΝΟΥΑΡΙΟΣ","ΦΕΒΡΟΥΑΡΙΟΣ","ΜΑΡΤΙΟΣ","ΑΠΡΙΛΙΟΣ","ΜΑΪΟΣ","ΙΟΥΝΙΟΣ","ΙΟΥΛΙΟΣ","ΑΥΓΟΥΣΤΟΣ","ΣΕΠΤΕΜΒΡΙΟΣ","ΟΚΤΩΒΡΙΟΣ","ΝΟΕΜΒΡΙΟΣ","ΔΕΚΕΜΒΡΙΟΣ"];
+const MONTHS_SHORT = ["Ιαν","Φεβ","Μαρ","Απρ","Μάι","Ιουν","Ιουλ","Αυγ","Σεπ","Οκτ","Νοε","Δεκ"];
 
-    function setType(t) { currentType = t; document.getElementById('btnIncome').classList.toggle('active-income', t==='Έσοδο'); document.getElementById('btnExpense').classList.toggle('active-expense', t==='Έξοδο'); }
-    function parseGreekFloat(v) { if(!v) return 0; return parseFloat(v.toString().replace(',', '.')) || 0; }
-    function toggleSection(id) { const el = document.getElementById(id); el.style.display = (el.style.display==='block')?'none':'block'; }
+/* Σταθερή λίστα αιτιολογιών, από τις επαναλαμβανόμενες εγγραφές του 2026 */
+const CATS = {
+    'Έξοδο': [
+        { group: 'Πάγια μηνιαία', recurring: true, items: ['ΕΝΟΙΚΙΟ','ΚΟΙΝΟΧΡΗΣΤΑ','ΔΕΗ','ΝΕΡΟ','ΦΥΣΙΚΟ ΑΕΡΙΟ','ΤΗΛΕΦΩΝΙΑ-INTERNET','ΑΣΦΑΛΙΣΤΡΑ','ΕΦΚΑ-ΕΙΣΦΟΡΕΣ','ΦΟΡΟΙ-ΤΕΛΗ','ΔΟΣΕΙΣ-ΚΑΡΤΕΣ','ΣΥΝΔΡΟΜΕΣ','ΜΗΝΙΑΤΙΚΟ','ΑΜΟΙΒΕΣ-ΜΙΣΘΟΙ'] },
+        { group: 'Εβδομαδιαία', items: ['ΧΑΡΤΖΙΛΙΚΙ ΕΒΔΟΜΑΔΑΣ'] },
+        { group: 'Καθημερινά', items: ['ΣΟΥΠΕΡ ΜΑΡΚΕΤ','ΕΣΤΙΑΣΗ','ΚΑΦΕΣ','ΚΑΥΣΙΜΑ','ΣΥΝΤΗΡΗΣΗ ΑΥΤΟΚΙΝΗΤΟΥ','ΜΕΤΑΚΙΝΗΣΕΙΣ','ΦΑΡΜΑΚΑ-ΥΓΕΙΑ','ΕΝΔΥΣΗ','ΑΓΟΡΕΣ-ΕΞΟΠΛΙΣΜΟΣ','ΔΩΡΑ','ΔΙΑΣΚΕΔΑΣΗ-ΕΞΟΔΟΙ','ΤΑΞΙΔΙΑ','ΣΤΟΙΧΗΜΑΤΑ'] },
+        { group: 'Λοιπά', items: ['ΕΡΓΑΣΙΕΣ-ΕΠΙΠΛΩΣΗ ΣΠΙΤΙΟΥ','ΕΠΑΓΓΕΛΜΑΤΙΚΑ','ΔΙΑΦΟΡΑ'] }
+    ],
+    'Έσοδο': [
+        { group: 'Τακτικά', recurring: true, items: ['ΜΙΣΘΟΣ-ΑΜΟΙΒΗ','ΕΝΟΙΚΙΟ ΕΣΟΔΟ'] },
+        { group: 'Λοιπά', items: ['ΠΩΛΗΣΕΙΣ','ΕΙΣΠΡΑΞΗ ΤΙΜΟΛΟΓΙΟΥ','ΕΠΙΣΤΡΟΦΗ','ΜΕΤΑΦΟΡΑ ΑΠΟ ΛΟΓΑΡΙΑΣΜΟ','ΛΟΙΠΑ ΕΣΟΔΑ'] }
+    ]
+};
+const RECURRING = new Set([].concat(...Object.values(CATS).flat().filter(g => g.recurring).map(g => g.items)));
+const ALL_CATS = new Set([].concat(...Object.values(CATS).flat().map(g => g.items)));
+const CAT_PALETTE = ['#e63946','#457b9d','#f4a261','#2a9d8f','#9b5de5','#ffb703','#219ebc','#fb8500','#8ac926','#ff006e','#3a86ff','#6a4c93','#00bbf9','#b5838d','#588157','#bc6c25','#adb5bd'];
 
-    function handleLock() {
-        if (isLocked) { if (prompt("Κωδικός:") === "1234") { isLocked = false; document.getElementById('privateSection').style.display = 'block'; document.getElementById('lockBtn').innerText = "Lock 🔒"; document.getElementById('lockBtn').style.background = "#dc3545"; refreshPrivateUI(); }
-        } else { isLocked = true; document.getElementById('privateSection').style.display = 'none'; document.getElementById('lockBtn').innerText = "Unlock"; document.getElementById('lockBtn').style.background = "#6c757d"; }
+/* Κανόνες αυτόματης αναγνώρισης για τις παλιές εγγραφές (χωρίς πρόσωπο/κατηγορία) */
+const EXP_RULES = [
+    ['ΤΑΞΙΔΙΑ', ['VENEZIA','VERONA','ΒΙΕΝΝ','VIENNA','HILTON','ALBERTINA','ΑΕΡΟΔΡΟΜ','ΒΕΝΕΤΙ','ΞΕΝΟΔΟΧ','HOTEL','BOOKING','AIRBNB']],
+    ['ΚΟΙΝΟΧΡΗΣΤΑ', ['ΚΟΙΝΟΧΡΗΣΤ']],
+    ['ΕΝΟΙΚΙΟ', ['ΕΝΟΙΚΙ']],
+    ['ΑΣΦΑΛΙΣΤΡΑ', ['ΑΣΦΑΛ']],
+    ['ΔΕΗ', ['ΔΕΗ','ΡΕΥΜΑ','ΗΡΩΝ','PROTERGIA']],
+    ['ΝΕΡΟ', ['ΝΕΡΟ','ΔΕΥΑ']],
+    ['ΦΥΣΙΚΟ ΑΕΡΙΟ', ['ΑΕΡΙΟ','ZENITH','ΖΕΝΙΘ','ΖΕΝΙΤ']],
+    ['ΤΗΛΕΦΩΝΙΑ-INTERNET', ['COSMOTE','NOVA','VODAFONE',' ΟΤΕ ','ΚΙΝΗΤ','INTERNET','ΣΤΑΘΕΡΟ']],
+    ['ΕΦΚΑ-ΕΙΣΦΟΡΕΣ', ['ΕΦΚΑ','ΚΕΑΟ','ΕΝΣΗΜ','ΕΙΣΦΟΡ','ΕΙΣΔΟΡ']],
+    ['ΦΟΡΟΙ-ΤΕΛΗ', ['ΦΠΑ','ΦΜΥ','ΦΜΑ','ΕΦΟΡΙ','ΦΟΡΟ','ΕΝΦΙΑ','ENFIA','ΚΤΗΜΑΤΟΛΟΓ','ΣΥΜΒΟΛΑΙΟΓΡ','ΤΕΛΗ ΚΥΚΛ']],
+    ['ΔΟΣΕΙΣ-ΚΑΡΤΕΣ', ['ΔΟΣΗ','ΠΙΣΤΩΤΙΚ','ΠΛΗΡΩΜΗ ΚΑΡΤΑΣ','INTRUM','SKROUTZ','ΔΑΝΕΙ']],
+    ['ΣΥΝΔΡΟΜΕΣ', ['ZOOM','OPENAI','CHATGPT','NETFLIX','SPOTIFY','GOOGLE','APPLE','CLAUDE','ANTHROPIC','SUBSCRIPTION','ΝΕΤΦΛΙΞ']],
+    ['ΧΑΡΤΖΙΛΙΚΙ ΕΒΔΟΜΑΔΑΣ', ['ΕΒΔΟΜΑΔ','WEEK']],
+    ['ΜΗΝΙΑΤΙΚΟ', ['ΜΗΝΙΑΤΙΚ']],
+    ['ΑΜΟΙΒΕΣ-ΜΙΣΘΟΙ', ['ΑΜΟΙΒ','ΜΙΣΘ']],
+    ['ΚΑΥΣΙΜΑ', ['ΚΑΥΣΙΜ','DIESEL','ΠΕΤΡΕΛΑΙ','ΒΕΝΖΙΝ','POSTO']],
+    ['ΣΥΝΤΗΡΗΣΗ ΑΥΤΟΚΙΝΗΤΟΥ', ['QASHQAI','SERVICE','ΣΕΡΒΙΣ','ΕΛΑΣΤΙΚ','ΚΤΕΟ','ΣΥΝΕΡΓΕΙ']],
+    ['ΕΡΓΑΣΙΕΣ-ΕΠΙΠΛΩΣΗ ΣΠΙΤΙΟΥ', ['ΗΛΕΚΤΡΟΛΟΓ','ΥΔΡΑΥΛΙΚ','ΚΟΥΦΩΜΑΤ','ΕΠΙΠΛ','ΑΠΟΡΡΟΦΗΤ','ΘΕΡΜΟΣΤΑΤ','ΚΑΥΣΤΗΡ','ΝΙΠΤΗΡ','LEDOTAIN','ΣΕΙΣΗ','ΜΑΚΡΙΔΗΣ','ΤΡΑΠΕΖΙ','ΝΤΟΥΛΑΠ']],
+    ['ΕΠΑΓΓΕΛΜΑΤΙΚΑ', ['ACS','BOXNOW','BOX NOW','INTRALINK','FAGRON','ΤΙΜΟΛΟΓ','ΠΛΗΡΩΜ','ΜΑΓΑΖΙ']],
+    ['ΣΟΥΠΕΡ ΜΑΡΚΕΤ', ['LIDL','LΙDL','SUPER','ΣΟΥΠΕΡ','METRO','ΜΕΤΡΟ','COOP','MARKET','ΜΑΡΚΕΤ','CASH','ΨΩΜΙ','ΚΡΕΟΠΩΛ','ΣΚΛΑΒΕΝΙΤ','ΜΑΣΟΥΤ','ΑΡΤΟΠΟΙ','ΦΟΥΡΝ','SPAR','ΚΡΕΑΤ','FRUCTOSE']],
+    ['ΕΣΤΙΑΣΗ', ['ΦΑΓΗΤΟ','ΠΙΤΣΑ','ΓΥΡΟ','GOODYS','CICHETTI','CECHETTI','PANIN','BRIOCHE','ΠΑΓΩΤ','ΚΡΑΣΙ','SPRITZ','ΚΕΡΑΣΜ','ΤΑΒΕΡΝ','ΣΟΥΒΛΑΚ','WOLT','EFOOD','BURGER','ΣΝΙΤΣΕΛ','FIGMULLER','ΚΟΥΛΟΥΡ','ΓΛΥΚΟ','HOT DOG','ΠΟΤΑ','ΚΕΛΑΡΙ','ECCENTRICO']],
+    ['ΚΑΦΕΣ', ['ΚΑΦΕ','KAFE','CAFE','CAFFE','COFFEE','ΤΣΑΙ','ΤΣΑΥ']],
+    ['ΜΕΤΑΚΙΝΗΣΕΙΣ', ['ΕΙΣΗΤΗΡ','ΕΙΣΙΤΗΡ','BUS','VAPORETTO','ΤΡΕΝ','TAXI','ΤΑΞΙ ','ΔΙΟΔΙ','PARKING','ΣΤΑΘΜΕΥ']],
+    ['ΦΑΡΜΑΚΑ-ΥΓΕΙΑ', ['ΦΑΡΜΑΚΑ','ΓΙΑΤΡ','ΙΑΤΡ','ΓΥΑΛΙΑ','ΜΥΤΗ','ΟΔΟΝΤ']],
+    ['ΕΝΔΥΣΗ', ['ZARA','PEEK','ΦΟΡΕΜ','PAPOUTS','ROYXA','ΡΟΥΧ','ΚΑΠΕΛ','ΖΩΝΗ','ΦΟΥΛΑΡ','ΣΚΟΥΦ','ΠΑΠΟΥΤΣ','ΦΟΥΛΑΤ']],
+    ['ΔΩΡΑ', ['ΔΩΡ']],
+    ['ΑΓΟΡΕΣ-ΕΞΟΠΛΙΣΜΟΣ', ['JUMBO','TEMU','IKEA','ΚΑΛΩΔΙ','ΜΑΓΝΗΤΑΚ','PRAKTIKER','MASTICHA','ΑΓΟΡΕΣ','ΚΑΛΛΥΝΤ','ΜΑΚΙΓΙΑΖ','ΑΡΩΜΑ','ΚΑΡΤΠΟΣΤΑΛ']],
+    ['ΔΙΑΣΚΕΔΑΣΗ-ΕΞΟΔΟΙ', ['ΚΟΝΤΣΕΡΤ','ΜΟΥΣΕΙ','ΕΞΟΔΟΣ','ΣΙΝΕΜΑ','ΘΕΑΤΡ','THEA']],
+    ['ΣΤΟΙΧΗΜΑΤΑ', ['BET','ΟΠΑΠ','ΣΤΟΙΧΗΜ']]
+];
+const INC_RULES = [
+    ['ΠΩΛΗΣΕΙΣ', ['ΠΩΛΗΣ']],
+    ['ΕΙΣΠΡΑΞΗ ΤΙΜΟΛΟΓΙΟΥ', ['ΠΛΗΡΩΜ','ΤΙΜΟΛΟΓ','ΕΙΣΠΡΑΞ']],
+    ['ΜΙΣΘΟΣ-ΑΜΟΙΒΗ', ['ΜΙΣΘ','ΑΜΟΙΒ']],
+    ['ΕΝΟΙΚΙΟ ΕΣΟΔΟ', ['ΕΝΟΙΚΙ']],
+    ['ΕΠΙΣΤΡΟΦΗ', ['ΕΠΙΣΤΡΟΦ']],
+    ['ΜΕΤΑΦΟΡΑ ΑΠΟ ΛΟΓΑΡΙΑΣΜΟ', ['ΜΕΤΑΦΟΡ']]
+];
+/* Λέξεις που δείχνουν πρόσωπο (Άρης = Αριστοτέλης, Κωστής/Κώστας = Κωνσταντίνος, Λία = Βασιλεία) */
+const PERSON_RULES = [
+    ['ΑΡΙΣΤΟΤΕΛΗΣ', ['ΑΡΗΣ','ARIS','ARI','ARIST','ΑΡΙΣΤΟΤΕΛ','ΑΡΙΣΤΙΤΕΛ']],
+    ['ΚΩΝΣΤΑΝΤΙΝΟΣ', ['KOSTIS','KOSTAS','ΚΩΣΤΗΣ','ΚΩΣΤΗ','ΚΩΣΤΑΣ','ΚΩΣΤΑ','ΚΩΝΣΤΑΝΤΙΝ']],
+    ['ΒΑΣΙΛΕΙΑ', ['LIA','ΛΙΑ','ΛΙΑΣ','ΒΑΣΙΛΕΙΑ','ΒΑΣΙΛΕΙΑΣ']],
+    ['ΣΠΙΤΙ', ['ΣΠΙΤΙ','ΣΠΙΤΙΟΥ','ΣΠ','CASA']],
+    ['ΠΑΝΑΓΙΩΤΗΣ', ['ΜΟΥ','ΠΑΝΟΣ','ΠΑΝΟΥ','ΠΑΝΑΓΙΩΤΗΣ','ΠΑΝΑΓΙΩΤΗ','PANAGIOTIS','ZAROGOULIDIS']]
+];
+
+/* ================= ΕΙΣΟΔΟΣ (PIN + κωδικός email, όπως ZARKOLIA LAB) ================= */
+const _0x9f2a = "34b35aca37baf7d5d997466dff1ab8ca1dc901df7010f3279138670838e2c9e8";   // SHA-256 του PIN
+const EMAILJS_SERVICE  = "service_g59c3kc";
+const EMAILJS_TEMPLATE = "template_rgyiz5u";
+const EMAILJS_PUBLIC   = "J_DaEzTUYRLMkupgD";
+const SESSION_MINUTES  = 30;   // μένεις συνδεδεμένος 30' στην ίδια καρτέλα/εφαρμογή
+
+let _otp = null, _otpExpiry = null, _otpTimerInterval = null, _authed = false;
+
+async function sha256(t) {
+    const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(t));
+    return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+function sendMail(params) {
+    if (typeof emailjs !== 'undefined') emailjs.send(EMAILJS_SERVICE, EMAILJS_TEMPLATE, params).catch(err => console.error('EmailJS:', err));
+}
+function _startOTPTimer() {
+    let remaining = 15 * 60;
+    _otpExpiry = Date.now() + remaining * 1000;
+    clearInterval(_otpTimerInterval);
+    _otpTimerInterval = setInterval(() => {
+        remaining--;
+        const el = document.getElementById('otpTimer');
+        if (el) el.textContent = Math.floor(remaining / 60) + ':' + pad(remaining % 60);
+        if (remaining <= 0) { clearInterval(_otpTimerInterval); _otp = null; alert('Ο κωδικός έληξε. Ξαναδοκίμασε.'); resetLogin(); }
+    }, 1000);
+}
+async function checkLogin() {
+    const input = document.getElementById('passwordInput').value;
+    if (!input) return;
+    const stamp = new Date().toLocaleString('el-GR', { dateStyle: 'short', timeStyle: 'short' });
+    if (await sha256(input) === _0x9f2a) {
+        _otp = String(Math.floor(100000 + Math.random() * 900000));
+        document.getElementById('loginBox').style.display = 'none';
+        document.getElementById('otpBox').style.display = 'block';
+        document.getElementById('otpInput').value = '';
+        document.getElementById('otpInput').focus();
+        _startOTPTimer();
+        const exp = new Date(Date.now() + 15 * 60 * 1000).toLocaleString('el-GR', { dateStyle: 'short', timeStyle: 'short' });
+        sendMail({ passcode: _otp, time: exp + ' · Finance Manager' });
+    } else {
+        sendMail({ passcode: '⚠️ ΑΠΟΤΥΧΗΜΕΝΗ ΑΠΟΠΕΙΡΑ · Finance Manager', time: stamp });
+        alert('Λάθος κωδικός');
+        document.getElementById('passwordInput').value = '';
     }
-
-    function refreshPrivateUI() {
-        if(!lastData || isLocked) return;
-        const mIdx = parseInt(document.getElementById('balMonth').value);
-        const colIdx = mIdx + 2; const pColIdx = colIdx - 1; 
-        let cVals = [], pVals = [], labels = [], total = 0;
-        lastData.fullBalance.forEach(row => { labels.push(row[0]); const c = parseFloat(row[colIdx])||0; const p = parseFloat(row[pColIdx])||0; cVals.push(c); pVals.push(p); total += c; });
-        document.getElementById('totalLabel').innerText = total.toLocaleString() + "€";
-        if(chartP) chartP.destroy();
-        chartP = new Chart(document.getElementById('pieChart'), { type: 'doughnut', data: { labels: labels, datasets: [{ data: cVals, backgroundColor: ['#FF6384','#36A2EB','#FFCE56','#4BC0C0','#9966FF','#FF9F40','#8AC926','#1982C4','#6A4C93','#F15BB5','#FEE440','#00BBF9','#00F5D4','#9B5DE5'] }] }, options: { responsive: true, maintainAspectRatio: false } });
-        document.getElementById('diffList').innerHTML = labels.map((n, i) => { const d = cVals[i]-pVals[i]; const cl = d>0?'diff-up':d<0?'diff-down':''; return `<div class="balance-row"><span>${n}</span><span class="${cl}">${d>0?'▲':d<0?'▼':'•'} ${Math.abs(d).toLocaleString()}€</span></div>`; }).join('');
-        document.getElementById('balInputs').innerHTML = labels.map((n, i) => `<div class="bal-input-row"><span>${n}</span><input type="text" class="bal-val" value="${cVals[i]===0?'':cVals[i].toString().replace('.',',')}" placeholder="0,00" inputmode="decimal"></div>`).join('');
+}
+function verifyOTP() {
+    const entered = document.getElementById('otpInput').value.trim();
+    if (!_otp || Date.now() > _otpExpiry) { _otp = null; alert('Ο κωδικός έληξε.'); return resetLogin(); }
+    if (entered === _otp) {
+        clearInterval(_otpTimerInterval); _otp = null;
+        try { sessionStorage.setItem('fm_auth', String(Date.now() + SESSION_MINUTES * 60000)); } catch (e) {}
+        unlockApp();
+    } else {
+        alert('Λάθος κωδικός. Δοκίμασε ξανά.');
+        document.getElementById('otpInput').value = '';
+        document.getElementById('otpInput').focus();
     }
+}
+function resetLogin() {
+    clearInterval(_otpTimerInterval); _otp = null;
+    document.getElementById('otpBox').style.display = 'none';
+    document.getElementById('loginBox').style.display = 'block';
+    document.getElementById('passwordInput').value = '';
+    document.getElementById('passwordInput').focus();
+}
+function unlockApp() {
+    _authed = true;
+    document.getElementById('loginOverlay').style.display = 'none';
+    loadData();
+}
+function sessionValid() {
+    try { return Number(sessionStorage.getItem('fm_auth') || 0) > Date.now(); } catch (e) { return false; }
+}
+document.getElementById('passwordInput').addEventListener('keypress', e => { if (e.key === 'Enter') checkLogin(); });
+document.getElementById('otpInput').addEventListener('keypress', e => { if (e.key === 'Enter') verifyOTP(); });
+document.getElementById('otpInput').addEventListener('input', e => { if (e.target.value.trim().length === 6) verifyOTP(); });
 
-    function loadData() {
-        fetch(SCRIPT_URL).then(r => r.json()).then(data => {
-            lastData = data;
-            document.getElementById('categoryList').innerHTML = data.categories.map(c => `<option value="${c}">`).join('');
-            const mSel = document.getElementById('balMonth');
-            if(mSel.options.length === 0) { const ms = ["ΙΑΝΟΥΑΡΙΟΣ", "ΦΕΒΡΟΥΑΡΙΟΣ", "ΜΑΡΤΙΟΣ", "ΑΠΡΙΛΙΟΣ", "ΜΑΪΟΣ", "ΙΟΥΝΙΟΣ", "ΙΟΥΛΙΟΣ", "ΑΥΓΟΥΣΤΟΣ", "ΣΕΠΤΕΜΒΡΙΟΣ", "ΟΚΤΩΒΡΙΟΣ", "ΝΟΕΜΒΡΙΟΣ", "ΔΕΚΕΜΒΡΙΟΣ"]; mSel.innerHTML = ms.map((m, i) => `<option value="${i}">${m}</option>`).join(''); mSel.value = new Date().getMonth(); }
-            
-            if(chartD) chartD.destroy(); chartD = drawBar('dayChart', data.stats.day.income, data.stats.day.expense);
-            if(chartW) chartW.destroy(); chartW = drawBar('weekChart', data.stats.week.income, data.stats.week.expense);
-            if(chartM) chartM.destroy(); chartM = drawBar('monthChart', data.stats.month.income, data.stats.month.expense);
-            if(chartY) chartY.destroy(); chartY = drawBar('yearChart', data.stats.year.income, data.stats.year.expense);
-            
-            // Υπολογισμός Συνολικής Εικόνας (Income - Expense)
-            if(chartS) chartS.destroy();
-            const diff = data.stats.month.income - data.stats.month.expense;
-            chartS = drawSummaryBar('summaryChart', data.stats.month.income, data.stats.month.expense, diff);
+/* ================= ΚΑΤΑΣΤΑΣΗ ================= */
+let charts = {};
+let isLocked = true, lastData = null, currentType = 'Έξοδο', currentPerson = null;
+let TX = [];
+let anPerson = 'ΟΛΟΙ', anRange = 'thisMonth', showAllTx = false;
 
-            if(!isLocked) refreshPrivateUI();
-        });
+/* ================= ΒΟΗΘΗΤΙΚΑ ================= */
+const pad = n => String(n).padStart(2, '0');
+const ymd = d => d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+const ym = d => d.getFullYear() + '-' + pad(d.getMonth() + 1);
+const norm = s => (s || '').toString().normalize('NFD').replace(/[̀-ͯ]/g, '').toUpperCase().trim();
+const eur = v => (Math.round(v * 100) / 100).toLocaleString('el-GR', { minimumFractionDigits: 0, maximumFractionDigits: 2 }) + '€';
+const esc = s => (s || '').toString().replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+const monthLabel = k => { const [y, m] = k.split('-'); return MONTHS_SHORT[parseInt(m, 10) - 1] + ' ' + y.slice(2); };
+
+function parseGreekFloat(v) {
+    if (v === null || v === undefined || v === '') return 0;
+    if (typeof v === 'number') return v;
+    let s = v.toString().replace(/[€\s]/g, '');
+    if (s.includes(',')) s = s.replace(/\./g, '').replace(',', '.');
+    return parseFloat(s) || 0;
+}
+function toast(msg) { const t = document.getElementById('toast'); t.innerText = msg; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 2200); }
+function toggleSection(id) { const el = document.getElementById(id); el.style.display = (el.style.display === 'block') ? 'none' : 'block'; }
+function store(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+function load(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
+
+function words(s) { return norm(s).split(/[^A-ZΑ-Ω0-9]+/).filter(Boolean); }
+function inferPerson(text) {
+    const w = words(text);
+    const hit = k => w.some(x => k.length >= 5 ? x.startsWith(k) : x === k);
+    for (const [p, keys] of PERSON_RULES) if (keys.some(hit)) return p;
+    return '';
+}
+function inferCategory(text, type) {
+    const s = ' ' + norm(text).replace(/[^A-ZΑ-Ω0-9]+/g, ' ') + ' ';
+    if (ALL_CATS.has(norm(text))) return norm(text);
+    const rules = type === 'Έσοδο' ? INC_RULES : EXP_RULES;
+    for (const [c, keys] of rules) if (keys.some(k => s.includes(k))) return c;
+    return type === 'Έσοδο' ? 'ΛΟΙΠΑ ΕΣΟΔΑ' : 'ΔΙΑΦΟΡΑ';
+}
+function normBank(b) {
+    const s = norm(b);
+    if (s.includes('ΠΕΙΡΑΙ')) return 'Πειραιώς';
+    if (s.includes('EUROBANK')) return 'Eurobank';
+    if (s.includes('REVOLUT')) return 'Revolut';
+    if (s.includes('ΜΕΤΡΗΤ')) return 'Μετρητά';
+    if (s.includes('ALPHA')) return 'Alpha';
+    if (s.includes('ΕΘΝΙΚ')) return 'Εθνική';
+    return (b || '').toString().trim();
+}
+
+/* Μετατρέπει τις γραμμές του φύλλου σε ενιαία μορφή */
+function enrich(rows) {
+    return rows.map(r => {
+        const type = (r.type || '').toString().trim() === 'Έσοδο' ? 'Έσοδο' : 'Έξοδο';
+        const reason = (r.reason || '').toString().trim();
+        const note = (r.note || '').toString().trim();
+        const pRaw = norm(r.person);
+        const person = PERSONS.includes(pRaw) ? pRaw : (inferPerson(reason + ' ' + note) || NO_PERSON);
+        const cat = inferCategory(reason, type);
+        const ref = /^\d{4}-\d{2}$/.test(r.ref || '') ? r.ref : '';
+        return {
+            row: r.row, date: r.date, amount: parseGreekFloat(r.amount), type, bank: normBank(r.bank),
+            reason, note, person, cat, ref,
+            effMonth: ref || (r.date || '').slice(0, 7),
+            personGuess: !PERSONS.includes(pRaw) && person !== NO_PERSON,
+            catGuess: !ALL_CATS.has(norm(reason)),
+            detail: ALL_CATS.has(norm(reason)) ? note : reason + (note ? ' · ' + note : '')
+        };
+    }).filter(r => r.date && r.amount);
+}
+
+/* ================= ΦΟΡΜΑ ================= */
+function setType(t) {
+    currentType = t;
+    document.getElementById('btnIncome').classList.toggle('active-income', t === 'Έσοδο');
+    document.getElementById('btnExpense').classList.toggle('active-expense', t === 'Έξοδο');
+    fillCategories();
+}
+function fillCategories(selected) {
+    const sel = document.getElementById('category');
+    sel.innerHTML = '<option value="" disabled selected>Επιλογή αιτιολογίας</option>' +
+        CATS[currentType].map(g => `<optgroup label="${g.group}">${g.items.map(i => `<option value="${i}">${i}</option>`).join('')}</optgroup>`).join('') +
+        '<optgroup label="Άλλη"><option value="__other">+ Νέα αιτιολογία…</option></optgroup>';
+    if (selected) sel.value = selected;
+    onCategoryChange();
+}
+function onCategoryChange() {
+    const v = document.getElementById('category').value;
+    const custom = document.getElementById('customCategory');
+    custom.style.display = v === '__other' ? 'block' : 'none';
+    custom.required = v === '__other';
+    document.getElementById('refWrap').style.display = RECURRING.has(v) ? 'block' : 'none';
+}
+function renderPersonChips() {
+    document.getElementById('personChips').innerHTML = PERSONS.map(p =>
+        `<div class="chip ${p === currentPerson ? 'on' : ''}" style="${p === currentPerson ? 'background:' + PERSON_COLORS[p] : ''}" onclick="selectPerson('${p}')">${p}</div>`).join('');
+}
+function selectPerson(p) { currentPerson = p; renderPersonChips(); }
+
+function prefill(person, cat, amount, ref) {
+    setType(CATS['Έσοδο'].some(g => g.items.includes(cat)) ? 'Έσοδο' : 'Έξοδο');
+    selectPerson(person);
+    fillCategories(cat);
+    document.getElementById('amount').value = amount ? amount.toString().replace('.', ',') : '';
+    document.getElementById('refMonth').value = ref;
+    document.getElementById('formBox').scrollIntoView({ behavior: 'smooth' });
+    document.getElementById('amount').focus();
+}
+
+/* ================= ΦΟΡΤΩΣΗ ================= */
+function apiUrl() { const k = load('fm_key'); return SCRIPT_URL + (k ? '?key=' + encodeURIComponent(k) : ''); }
+
+function loadData(retry) {
+    document.getElementById('loading').style.display = 'block';
+    fetch(apiUrl()).then(r => r.json()).then(data => {
+        if (data.error === 'unauthorized') {
+            const k = prompt('Κλειδί πρόσβασης:');
+            if (k && !retry) { store('fm_key', k); return loadData(true); }
+            document.getElementById('loading').innerText = 'Χωρίς πρόσβαση στα δεδομένα';
+            return;
+        }
+        lastData = data;
+        TX = enrich(data.transactions || []);
+        document.getElementById('loading').style.display = 'none';
+
+        // προτάσεις για τη σημείωση: παλιές αιτιολογίες + λίστα DATA
+        const notes = new Set();
+        TX.forEach(t => { if (t.note) notes.add(t.note); else if (t.catGuess) notes.add(t.reason); });
+        (data.categories || []).forEach(c => c && notes.add(c));
+        document.getElementById('noteList').innerHTML = [...notes].slice(0, 300).map(c => `<option value="${esc(c)}">`).join('');
+
+        const mSel = document.getElementById('balMonth');
+        if (mSel.options.length === 0) { mSel.innerHTML = MONTHS.map((m, i) => `<option value="${i}">${m}</option>`).join(''); mSel.value = new Date().getMonth(); }
+
+        renderStats();
+        renderDue();
+        renderAnalysis();
+        if (!isLocked) refreshPrivateUI();
+    }).catch(err => {
+        document.getElementById('loading').innerText = 'Σφάλμα φόρτωσης. Δοκίμασε ξανά.';
+        console.error(err);
+    });
+}
+
+function post(payload) {
+    const k = load('fm_key');
+    if (k) payload.key = k;
+    return fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload) })
+        .then(r => r.json().catch(() => ({ ok: true })));
+}
+
+/* ================= ΣΤΑΤΙΣΤΙΚΑ ================= */
+function sumBy(list) {
+    let inc = 0, exp = 0;
+    list.forEach(t => t.type === 'Έσοδο' ? inc += t.amount : exp += t.amount);
+    return { inc, exp };
+}
+function renderStats() {
+    const now = new Date();
+    const today = ymd(now);
+    const monday = new Date(now); monday.setDate(now.getDate() - ((now.getDay() + 6) % 7));
+    const wStart = ymd(monday);
+    const mKey = ym(now), yKey = String(now.getFullYear());
+
+    const d = sumBy(TX.filter(t => t.date === today));
+    const w = sumBy(TX.filter(t => t.date >= wStart && t.date <= today));
+    const m = sumBy(TX.filter(t => t.date.startsWith(mKey)));
+    const y = sumBy(TX.filter(t => t.date.startsWith(yKey)));
+
+    drawBar('dayChart', d.inc, d.exp);
+    drawBar('weekChart', w.inc, w.exp);
+    drawBar('monthChart', m.inc, m.exp);
+    drawBar('yearChart', y.inc, y.exp);
+    drawSummaryBar('summaryChart', m.inc, m.exp, m.inc - m.exp);
+}
+function mk(id, cfg) { if (charts[id]) charts[id].destroy(); charts[id] = new Chart(document.getElementById(id), cfg); return charts[id]; }
+
+function drawBar(id, inc, exp) {
+    return mk(id, {
+        type: 'bar',
+        data: { labels: ['Έσοδα', 'Έξοδα'], datasets: [{ data: [inc, exp], backgroundColor: ['#28a745', '#dc3545'], borderRadius: 5 }] },
+        options: {
+            indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { display: false }, datalabels: { color: '#000', anchor: 'end', align: 'right', offset: 5, formatter: v => eur(v), font: { weight: 'bold', size: 10 } } },
+            scales: { x: { display: false, grace: '25%' }, y: { grid: { display: false } } }
+        }
+    });
+}
+function drawSummaryBar(id, inc, exp, diff) {
+    return mk(id, {
+        type: 'bar',
+        data: { labels: ['Έσοδα', 'Έξοδα', 'Υπόλοιπο'], datasets: [{ data: [inc, exp, diff], backgroundColor: ['#28a745', '#dc3545', diff >= 0 ? '#007bff' : '#ff8800'], borderRadius: 5 }] },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { display: false }, datalabels: { color: '#000', anchor: 'end', align: 'top', formatter: v => eur(v), font: { weight: 'bold', size: 10 } } },
+            scales: { y: { display: false, grace: '20%' }, x: { grid: { display: false } } }
+        }
+    });
+}
+
+/* ================= ΠΑΓΙΑ ΜΗΝΑ ================= */
+function prevMonths(key, n) {
+    const [y, m] = key.split('-').map(Number);
+    const out = [];
+    for (let i = 1; i <= n; i++) { const d = new Date(y, m - 1 - i, 1); out.push(ym(d)); }
+    return out;
+}
+function renderDue() {
+    const M = document.getElementById('dueMonth').value || ym(new Date());
+    const window3 = prevMonths(M, 3);
+    // ποια πάγια (πρόσωπο + αιτιολογία) εμφανίστηκαν τους 3 προηγούμενους μήνες
+    const expected = {};
+    TX.filter(t => t.type === 'Έξοδο' && RECURRING.has(t.cat) && window3.includes(t.effMonth))
+      .sort((a, b) => a.date.localeCompare(b.date))
+      .forEach(t => { expected[t.person + '|' + t.cat] = { person: t.person, cat: t.cat, last: t.amount }; });
+    // τι έχει πληρωθεί για τον μήνα Μ
+    const paid = {};
+    TX.filter(t => t.type === 'Έξοδο' && RECURRING.has(t.cat) && t.effMonth === M)
+      .forEach(t => { const k = t.person + '|' + t.cat; paid[k] = (paid[k] || 0) + t.amount; if (!expected[k]) expected[k] = { person: t.person, cat: t.cat, last: t.amount }; });
+
+    const items = Object.entries(expected).sort((a, b) => (!!paid[a[0]] - !!paid[b[0]]) || a[1].person.localeCompare(b[1].person));
+    const done = items.filter(([k]) => paid[k]).length;
+    document.getElementById('dueBar').style.width = items.length ? (done / items.length * 100) + '%' : '0%';
+    const pending = items.filter(([k]) => !paid[k]).reduce((s, [, v]) => s + v.last, 0);
+    document.getElementById('dueSummary').innerText = items.length
+        ? `${done} από ${items.length} πληρωμένα · εκκρεμούν περίπου ${eur(pending)}`
+        : 'Δεν βρέθηκαν πάγια τους προηγούμενους 3 μήνες';
+    document.getElementById('dueList').innerHTML = items.map(([k, v]) => {
+        const ok = !!paid[k];
+        return `<div class="due">
+            <div class="st">${ok ? '✅' : '⏳'}</div>
+            <div class="main"><span class="badge" style="background:${PERSON_COLORS[v.person]}">${v.person}</span> <b>${v.cat}</b>
+                <div style="color:#777; font-size:0.65rem; margin-top:2px;">${ok ? 'Πληρώθηκαν ' + eur(paid[k]) : 'Τελευταία φορά ' + eur(v.last)}</div></div>
+            ${ok ? '' : `<button onclick="prefill('${v.person}','${v.cat}',${v.last},'${M}')">Καταχώρηση</button>`}
+        </div>`;
+    }).join('');
+}
+
+/* ================= ΑΝΑΛΥΣΗ ΑΝΑ ΠΡΟΣΩΠΟ ================= */
+const RANGES = [['thisMonth', 'Τρέχων μήνας'], ['lastMonth', 'Προηγ. μήνας'], ['last3', '3 μήνες'], ['ytd', 'Από αρχή έτους'], ['custom', 'Επιλογή…']];
+function renderAnChips() {
+    const opts = ['ΟΛΟΙ', ...PERSONS, NO_PERSON];
+    document.getElementById('anPersonChips').innerHTML = opts.map(p => {
+        const on = p === anPerson, col = p === 'ΟΛΟΙ' ? '#1d3557' : PERSON_COLORS[p];
+        return `<div class="chip small ${on ? 'on' : ''}" style="${on ? 'background:' + col : ''}" onclick="anPerson='${p}'; renderAnChips(); renderAnalysis();">${p}</div>`;
+    }).join('');
+    document.getElementById('rangeChips').innerHTML = RANGES.map(([k, l]) =>
+        `<div class="chip small plain ${k === anRange ? 'on' : ''}" onclick="setRange('${k}')">${l}</div>`).join('');
+}
+function setRange(k) {
+    anRange = k;
+    document.getElementById('customRange').style.display = k === 'custom' ? 'flex' : 'none';
+    renderAnChips(); renderAnalysis();
+}
+function getRange() {
+    const now = new Date(), y = now.getFullYear(), m = now.getMonth();
+    switch (anRange) {
+        case 'thisMonth': return [ymd(new Date(y, m, 1)), ymd(new Date(y, m + 1, 0))];
+        case 'lastMonth': return [ymd(new Date(y, m - 1, 1)), ymd(new Date(y, m, 0))];
+        case 'last3': return [ymd(new Date(y, m - 2, 1)), ymd(new Date(y, m + 1, 0))];
+        case 'ytd': return [y + '-01-01', ymd(now)];
+        default: return [document.getElementById('fromDate').value || y + '-01-01', document.getElementById('toDate').value || ymd(now)];
     }
+}
+function inRange(t, from, to, basis) {
+    if (basis === 'ref') return t.effMonth >= from.slice(0, 7) && t.effMonth <= to.slice(0, 7);
+    return t.date >= from && t.date <= to;
+}
+let RANGE_TX = [];
+function renderAnalysis() {
+    if (!lastData) return;
+    const [from, to] = getRange();
+    const basis = document.getElementById('basis').value;
+    const type = document.getElementById('anType').value;
+    const inR = TX.filter(t => inRange(t, from, to, basis));
+    const mine = anPerson === 'ΟΛΟΙ' ? inR : inR.filter(t => t.person === anPerson);
+    const s = sumBy(mine);
+    document.getElementById('kExp').innerText = eur(s.exp);
+    document.getElementById('kInc').innerText = eur(s.inc);
+    document.getElementById('kCnt').innerText = mine.length;
+    const fmt = d => d.split('-').reverse().join('/');
+    document.getElementById('rangeLabel').innerText = basis === 'ref'
+        ? `Μήνες αναφοράς ${monthLabel(from.slice(0, 7))} έως ${monthLabel(to.slice(0, 7))}`
+        : `${fmt(from)} έως ${fmt(to)}`;
 
-    function drawBar(id, inc, exp) { 
-        return new Chart(document.getElementById(id), { 
-            type: 'bar', 
-            data: { labels: ['Έσοδα', 'Έξοδα'], datasets: [{ data: [inc, exp], backgroundColor: ['#28a745', '#dc3545'], borderRadius: 5 }] }, 
-            options: { 
-                indexAxis: 'y', responsive: true, maintainAspectRatio: false, 
-                plugins: { 
-                    legend: { display: false },
-                    datalabels: { color: '#000', anchor: 'end', align: 'right', offset: 5, formatter: (v) => v.toLocaleString() + '€', font: { weight: 'bold', size: 10 } }
-                }, 
-                scales: { x: { display: false, grace: '20%' }, y: { grid: { display: false } } } 
-            } 
-        }); 
-    }
+    const typed = mine.filter(t => t.type === type);
+    const color = type === 'Έξοδο' ? '#dc3545' : '#28a745';
 
-    function drawSummaryBar(id, inc, exp, diff) {
-        return new Chart(document.getElementById(id), {
+    // 1. σύνολα ανά πρόσωπο (μόνο όταν βλέπουμε όλους)
+    document.getElementById('perPersonBox').style.display = anPerson === 'ΟΛΟΙ' ? 'block' : 'none';
+    if (anPerson === 'ΟΛΟΙ') {
+        const ppl = [...PERSONS, NO_PERSON];
+        const vals = ppl.map(p => typed.filter(t => t.person === p).reduce((a, t) => a + t.amount, 0));
+        mk('personChart', {
             type: 'bar',
-            data: { 
-                labels: ['Έσοδα', 'Έξοδα', 'Υπόλοιπο'], 
-                datasets: [{ data: [inc, exp, diff], backgroundColor: ['#28a745', '#dc3545', '#007bff'], borderRadius: 5 }] 
-            },
+            data: { labels: ppl, datasets: [{ data: vals, backgroundColor: ppl.map(p => PERSON_COLORS[p]), borderRadius: 5 }] },
             options: {
-                responsive: true, maintainAspectRatio: false,
-                plugins: {
-                    legend: { display: false },
-                    datalabels: { color: '#000', anchor: 'end', align: 'top', formatter: (v) => v.toLocaleString() + '€', font: { weight: 'bold', size: 10 } }
-                },
-                scales: { y: { display: false, grace: '20%' }, x: { grid: { display: false } } }
+                indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+                onClick: (e, els) => { if (els.length) { anPerson = ppl[els[0].index]; renderAnChips(); renderAnalysis(); } },
+                plugins: { legend: { display: false }, datalabels: { color: '#000', anchor: 'end', align: 'right', offset: 4, formatter: v => v ? eur(v) : '', font: { weight: 'bold', size: 10 } } },
+                scales: { x: { display: false, grace: '30%' }, y: { grid: { display: false }, ticks: { font: { size: 10 } } } }
             }
         });
     }
 
-    function saveBal() { 
-        const btn = document.getElementById('balBtn'); btn.disabled = true; btn.innerText = "Αποστολή...";
-        const vs = Array.from(document.getElementsByClassName('bal-val')).map(i => parseGreekFloat(i.value)); 
-        fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: "updateBalance", monthIndex: document.getElementById('balMonth').value, values: vs }) }).then(() => { 
-            alert("Επιτυχής Ενημέρωση!"); loadData(); btn.disabled = false; btn.innerText = "Αποθήκευση";
-        }); 
-    }
+    // 2. κατανομή ανά αιτιολογία
+    const byCat = {};
+    typed.forEach(t => { byCat[t.cat] = byCat[t.cat] || { sum: 0, n: 0 }; byCat[t.cat].sum += t.amount; byCat[t.cat].n++; });
+    const cats = Object.entries(byCat).sort((a, b) => b[1].sum - a[1].sum);
+    const total = cats.reduce((a, [, v]) => a + v.sum, 0);
+    mk('catChart', {
+        type: 'doughnut',
+        data: { labels: cats.map(c => c[0]), datasets: [{ data: cats.map(c => c[1].sum), backgroundColor: cats.map((c, i) => CAT_PALETTE[i % CAT_PALETTE.length]), borderWidth: 1 }] },
+        options: {
+            responsive: true, maintainAspectRatio: false, cutout: '55%',
+            plugins: {
+                legend: { display: false },
+                datalabels: { color: '#fff', font: { weight: 'bold', size: 10 }, formatter: v => total && v / total >= 0.07 ? Math.round(v / total * 100) + '%' : '' },
+                tooltip: { callbacks: { label: c => c.label + ': ' + eur(c.raw) } }
+            }
+        }
+    });
+    document.getElementById('catTable').innerHTML = cats.length ? cats.map(([c, v], i) =>
+        `<tr><td><span class="dot" style="background:${CAT_PALETTE[i % CAT_PALETTE.length]}"></span>${c}</td><td class="r" style="color:#888">${v.n}×</td><td class="r" style="color:#888">${total ? Math.round(v.sum / total * 100) : 0}%</td><td class="r"><b>${eur(v.sum)}</b></td></tr>`).join('') +
+        `<tr><td><b>ΣΥΝΟΛΟ</b></td><td></td><td></td><td class="r"><b style="color:${color}">${eur(total)}</b></td></tr>`
+        : '<tr><td class="muted">Καμία κίνηση στο διάστημα</td></tr>';
 
-    window.onload = loadData;
-    document.getElementById('date').valueAsDate = new Date();
-    document.getElementById('cashForm').onsubmit = function(e) { 
-        e.preventDefault(); const btn = document.getElementById('submitBtn'); btn.disabled = true; 
-        fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ date: document.getElementById('date').value, amount: parseGreekFloat(document.getElementById('amount').value), category: document.getElementById('category').value, bank: document.getElementById('bank').value, type: currentType }) }).then(() => { 
-            document.getElementById('amount').value = ''; btn.disabled = false; loadData(); 
-        }); 
-    };
+    // 3. πορεία ανά μήνα (στοιβαγμένη ανά πρόσωπο)
+    const months = [];
+    { let [yy, mm] = from.slice(0, 7).split('-').map(Number); const end = to.slice(0, 7);
+      while (true) { const k = yy + '-' + pad(mm); months.push(k); if (k >= end || months.length > 36) break; mm++; if (mm > 12) { mm = 1; yy++; } } }
+    const keyOf = t => basis === 'ref' ? t.effMonth : t.date.slice(0, 7);
+    const ppl = anPerson === 'ΟΛΟΙ' ? [...PERSONS, NO_PERSON] : [anPerson];
+    const datasets = ppl.map(p => ({
+        label: p, backgroundColor: PERSON_COLORS[p], borderRadius: 3,
+        data: months.map(k => typed.filter(t => t.person === p && keyOf(t) === k).reduce((a, t) => a + t.amount, 0))
+    })).filter(ds => ds.data.some(v => v));
+    mk('trendChart', {
+        type: 'bar',
+        data: { labels: months.map(monthLabel), datasets },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { display: datasets.length > 1, position: 'bottom', labels: { boxWidth: 10, font: { size: 9 } } }, datalabels: { display: false },
+                       tooltip: { callbacks: { label: c => c.dataset.label + ': ' + eur(c.raw) } } },
+            scales: { x: { stacked: true, grid: { display: false } }, y: { stacked: true, ticks: { callback: v => v.toLocaleString('el-GR') + '€', font: { size: 9 } } } }
+        }
+    });
+
+    RANGE_TX = mine;
+    renderTxList();
+}
+function renderTxList() {
+    const q = norm(document.getElementById('txSearch').value);
+    let list = RANGE_TX.filter(t => !q || norm(t.cat + ' ' + t.reason + ' ' + t.note).includes(q))
+                       .sort((a, b) => b.date.localeCompare(a.date) || b.row - a.row);
+    const n = list.length;
+    if (!showAllTx) list = list.slice(0, 30);
+    document.getElementById('txList').innerHTML = list.length ? list.map(t => `
+        <div class="tx">
+            <div class="main">
+                <div class="t1"><span class="badge" style="background:${PERSON_COLORS[t.person]}">${t.person}${t.personGuess ? '*' : ''}</span> ${t.cat}${t.catGuess ? '<span class="guess">*</span>' : ''}</div>
+                <div class="t2">${t.date.split('-').reverse().join('/')} · ${esc(t.bank)}${t.ref ? ' · για ' + monthLabel(t.ref) : ''}${t.detail ? ' · ' + esc(t.detail) : ''}</div>
+            </div>
+            <div class="amt" style="color:${t.type === 'Έσοδο' ? '#28a745' : '#dc3545'}">${t.type === 'Έσοδο' ? '+' : '−'}${eur(t.amount)}</div>
+            <button class="del" title="Διαγραφή" onclick="delTx(${t.row})">✕</button>
+        </div>`).join('') : '<div class="muted">Καμία κίνηση</div>';
+    document.getElementById('txMore').innerText = n > 30 ? (showAllTx ? 'Λιγότερες' : `Όλες οι κινήσεις (${n})`) : '';
+}
+function delTx(row) {
+    const t = TX.find(x => x.row === row);
+    if (!t) return;
+    if (!confirm(`Διαγραφή της κίνησης ${t.date.split('-').reverse().join('/')} · ${t.cat} · ${eur(t.amount)};`)) return;
+    post({ action: 'delete', row: t.row, date: t.date, amount: t.amount }).then(res => {
+        toast(res && res.error ? 'Δεν διαγράφηκε: ' + res.error : 'Διαγράφηκε');
+        loadData();
+    });
+}
+
+/* ================= BALANCE ================= */
+function handleLock() {
+    if (isLocked) {
+        const pin = prompt("PIN:");
+        if (pin === null) return;
+        sha256(pin).then(h => {
+            if (h !== _0x9f2a) { toast('Λάθος PIN'); return; }
+            isLocked = false; document.getElementById('privateSection').style.display = 'block';
+            document.getElementById('lockBtn').innerText = "Lock 🔒"; document.getElementById('lockBtn').style.background = "#dc3545"; refreshPrivateUI();
+        });
+    } else {
+        isLocked = true; document.getElementById('privateSection').style.display = 'none';
+        document.getElementById('lockBtn').innerText = "Unlock"; document.getElementById('lockBtn').style.background = "#6c757d";
+    }
+}
+function refreshPrivateUI() {
+    if (!lastData || isLocked || !lastData.fullBalance) return;
+    const mIdx = parseInt(document.getElementById('balMonth').value);
+    const colIdx = mIdx + 2, pColIdx = colIdx - 1;
+    let cVals = [], pVals = [], labels = [], total = 0;
+    lastData.fullBalance.forEach(row => { labels.push(row[0]); const c = parseGreekFloat(row[colIdx]); const p = parseGreekFloat(row[pColIdx]); cVals.push(c); pVals.push(p); total += c; });
+    document.getElementById('totalLabel').innerText = eur(total);
+    mk('pieChart', { type: 'doughnut', data: { labels, datasets: [{ data: cVals, backgroundColor: ['#FF6384','#36A2EB','#FFCE56','#4BC0C0','#9966FF','#FF9F40','#8AC926','#1982C4','#6A4C93','#F15BB5','#FEE440','#00BBF9','#00F5D4','#9B5DE5','#adb5bd','#b5838d'] }] },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { datalabels: { display: false }, legend: { labels: { boxWidth: 10, font: { size: 9 } } } } } });
+    document.getElementById('diffList').innerHTML = labels.map((n, i) => { const d = cVals[i] - pVals[i]; const cl = d > 0 ? 'diff-up' : d < 0 ? 'diff-down' : ''; return `<div class="balance-row"><span>${esc(n)}</span><span class="${cl}">${d > 0 ? '▲' : d < 0 ? '▼' : '•'} ${eur(Math.abs(d))}</span></div>`; }).join('');
+    document.getElementById('balInputs').innerHTML = labels.map((n, i) => `<div class="bal-input-row"><span>${esc(n)}</span><input type="text" class="bal-val" value="${cVals[i] === 0 ? '' : cVals[i].toString().replace('.', ',')}" placeholder="0,00" inputmode="decimal"></div>`).join('');
+}
+function saveBal() {
+    const btn = document.getElementById('balBtn'); btn.disabled = true; btn.innerText = "Αποστολή...";
+    const vs = Array.from(document.getElementsByClassName('bal-val')).map(i => i.value.trim() === '' ? null : parseGreekFloat(i.value));
+    post({ action: "updateBalance", monthIndex: document.getElementById('balMonth').value, values: vs }).then(() => {
+        toast("Επιτυχής ενημέρωση"); loadData(); btn.disabled = false; btn.innerText = "Αποθήκευση";
+    });
+}
+
+/* ================= ΕΚΚΙΝΗΣΗ ================= */
+document.getElementById('date').valueAsDate = new Date();
+document.getElementById('refMonth').value = ym(new Date());
+document.getElementById('dueMonth').value = ym(new Date());
+document.getElementById('category').addEventListener('change', onCategoryChange);
+const lastBank = load('fm_bank'); if (lastBank) document.getElementById('bank').value = lastBank;
+renderPersonChips();
+fillCategories();
+renderAnChips();
+window.addEventListener('load', () => {
+    if (typeof emailjs !== 'undefined') emailjs.init(EMAILJS_PUBLIC);
+    if (sessionValid()) unlockApp();
+    else document.getElementById('passwordInput').focus();
+});
+
+document.getElementById('cashForm').onsubmit = function (e) {
+    e.preventDefault();
+    if (!currentPerson) { toast('Διάλεξε πρόσωπο'); return; }
+    const amount = parseGreekFloat(document.getElementById('amount').value);
+    if (!amount) { toast('Συμπλήρωσε ποσό'); return; }
+    let cat = document.getElementById('category').value;
+    if (cat === '__other') cat = document.getElementById('customCategory').value.trim().toUpperCase();
+    if (!cat) { toast('Διάλεξε αιτιολογία'); return; }
+    const btn = document.getElementById('submitBtn'); btn.disabled = true; btn.innerText = 'Αποστολή...';
+    const bank = document.getElementById('bank').value;
+    store('fm_bank', bank);
+    post({
+        action: 'add',
+        date: document.getElementById('date').value,
+        amount, category: cat, bank, type: currentType,
+        person: currentPerson,
+        refMonth: RECURRING.has(cat) ? document.getElementById('refMonth').value : '',
+        note: document.getElementById('note').value.trim()
+    }).then(res => {
+        btn.disabled = false; btn.innerText = 'Καταχώρηση';
+        if (res && res.error) { toast('Σφάλμα: ' + res.error); return; }
+        toast(`Καταχωρήθηκε: ${currentPerson} · ${cat} · ${eur(amount)}`);
+        document.getElementById('amount').value = '';
+        document.getElementById('note').value = '';
+        document.getElementById('customCategory').value = '';
+        loadData();
+    }).catch(() => { btn.disabled = false; btn.innerText = 'Καταχώρηση'; toast('Αποτυχία σύνδεσης'); });
+};
 </script>
 </body>
 </html>
