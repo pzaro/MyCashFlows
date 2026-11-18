@@ -272,9 +272,9 @@
 const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyqTntyiuUPdS2k84gal1cI52P2yrRbJ3fH-eV6UW3PJSA4litNirs4pdP5lNbZ-qDR4Q/exec";
 Chart.register(ChartDataLabels);
 
-const PERSONS = ['ΠΑΝΑΓΙΩΤΗΣ', 'ΒΑΣΙΛΕΙΑ', 'ΣΠΙΤΙ', 'ΑΡΙΣΤΟΤΕΛΗΣ', 'ΚΩΝΣΤΑΝΤΙΝΟΣ'];
+const PERSONS = ['ΠΑΝΑΓΙΩΤΗΣ', 'ΒΑΣΙΛΕΙΑ', 'ΣΠΙΤΙ', 'ΑΡΙΣΤΟΤΕΛΗΣ', 'ΚΩΝΣΤΑΝΤΙΝΟΣ', 'ZARKOLIA'];
 const NO_PERSON = 'ΑΚΑΘΟΡΙΣΤΟ';
-const PERSON_COLORS = { 'ΠΑΝΑΓΙΩΤΗΣ':'#1d3557', 'ΒΑΣΙΛΕΙΑ':'#e76f51', 'ΣΠΙΤΙ':'#2a9d8f', 'ΑΡΙΣΤΟΤΕΛΗΣ':'#f4a261', 'ΚΩΝΣΤΑΝΤΙΝΟΣ':'#7b2cbf', 'ΑΚΑΘΟΡΙΣΤΟ':'#adb5bd' };
+const PERSON_COLORS = { 'ΠΑΝΑΓΙΩΤΗΣ':'#1d3557', 'ΒΑΣΙΛΕΙΑ':'#e76f51', 'ΣΠΙΤΙ':'#2a9d8f', 'ΑΡΙΣΤΟΤΕΛΗΣ':'#f4a261', 'ΚΩΝΣΤΑΝΤΙΝΟΣ':'#7b2cbf', 'ZARKOLIA':'#0b7a75', 'ΑΚΑΘΟΡΙΣΤΟ':'#adb5bd' };
 const MONTHS = ["ΙΑΝΟΥΑΡΙΟΣ","ΦΕΒΡΟΥΑΡΙΟΣ","ΜΑΡΤΙΟΣ","ΑΠΡΙΛΙΟΣ","ΜΑΪΟΣ","ΙΟΥΝΙΟΣ","ΙΟΥΛΙΟΣ","ΑΥΓΟΥΣΤΟΣ","ΣΕΠΤΕΜΒΡΙΟΣ","ΟΚΤΩΒΡΙΟΣ","ΝΟΕΜΒΡΙΟΣ","ΔΕΚΕΜΒΡΙΟΣ"];
 const MONTHS_SHORT = ["Ιαν","Φεβ","Μαρ","Απρ","Μάι","Ιουν","Ιουλ","Αυγ","Σεπ","Οκτ","Νοε","Δεκ"];
 
@@ -293,6 +293,7 @@ const CATS = {
 };
 const RECURRING = new Set([].concat(...Object.values(CATS).flat().filter(g => g.recurring).map(g => g.items)));
 const ALL_CATS = new Set([].concat(...Object.values(CATS).flat().map(g => g.items)));
+const BUSINESS_CATS = new Set(['ΕΠΑΓΓΕΛΜΑΤΙΚΑ', 'ΠΩΛΗΣΕΙΣ', 'ΕΙΣΠΡΑΞΗ ΤΙΜΟΛΟΓΙΟΥ']);
 const CAT_PALETTE = ['#e63946','#457b9d','#f4a261','#2a9d8f','#9b5de5','#ffb703','#219ebc','#fb8500','#8ac926','#ff006e','#3a86ff','#6a4c93','#00bbf9','#b5838d','#588157','#bc6c25','#adb5bd'];
 
 /* Κανόνες αυτόματης αναγνώρισης για τις παλιές εγγραφές (χωρίς πρόσωπο/κατηγορία) */
@@ -341,6 +342,7 @@ const PERSON_RULES = [
     ['ΚΩΝΣΤΑΝΤΙΝΟΣ', ['KOSTIS','KOSTAS','ΚΩΣΤΗΣ','ΚΩΣΤΗ','ΚΩΣΤΑΣ','ΚΩΣΤΑ','ΚΩΝΣΤΑΝΤΙΝ']],
     ['ΒΑΣΙΛΕΙΑ', ['LIA','ΛΙΑ','ΛΙΑΣ','ΒΑΣΙΛΕΙΑ','ΒΑΣΙΛΕΙΑΣ']],
     ['ΣΠΙΤΙ', ['ΣΠΙΤΙ','ΣΠΙΤΙΟΥ','ΣΠ','CASA']],
+    ['ZARKOLIA', ['ZARKOLIA','ΖΑΡΚΟΛΙΑ','NUTRI','ACS','BOXNOW','FAGRON','INTRALINK','ΤΙΜΟΛΟΓ','ZPLAST','ALVEOLAIR','ZBOOST','REVITACELL','ΠΩΛΗΣ','ΜΑΓΑΖΙ','ΦΑΡΜΑΚΕΙ']],
     ['ΠΑΝΑΓΙΩΤΗΣ', ['ΜΟΥ','ΠΑΝΟΣ','ΠΑΝΟΥ','ΠΑΝΑΓΙΩΤΗΣ','ΠΑΝΑΓΙΩΤΗ','PANAGIOTIS','ZAROGOULIDIS']]
 ];
 
@@ -481,8 +483,9 @@ function enrich(rows) {
         const reason = (r.reason || '').toString().trim();
         const note = (r.note || '').toString().trim();
         const pRaw = norm(r.person);
-        const person = PERSONS.includes(pRaw) ? pRaw : (inferPerson(reason + ' ' + note) || NO_PERSON);
         const cat = inferCategory(reason, type);
+        const person = PERSONS.includes(pRaw) ? pRaw
+            : (inferPerson(reason + ' ' + note) || (BUSINESS_CATS.has(cat) ? 'ZARKOLIA' : NO_PERSON));
         const ref = /^\d{4}-\d{2}$/.test(r.ref || '') ? r.ref : '';
         return {
             row: r.row, date: r.date, amount: parseGreekFloat(r.amount), type, bank: normBank(r.bank),
