@@ -84,6 +84,9 @@
         .progress { height:8px; background:#eee; border-radius:6px; overflow:hidden; margin:8px 0 4px; }
         .progress > div { height:100%; background: var(--green); }
 
+        #bizWrap { display:none; margin-top:12px; padding:10px 12px 12px; border:1.5px solid #0b7a75; border-radius:12px; background:#f2fbfa; }
+        #bizWrap .biz-title { font-size:0.7rem; font-weight:bold; color:#0b7a75; letter-spacing:.5px; }
+        #bizWrap .lbl { margin-top:8px; }
         #toast { position:fixed; bottom:20px; left:50%; transform:translateX(-50%); background:#1a1a1a; color:#fff; padding:10px 16px; border-radius:10px; font-size:0.85rem; opacity:0; transition:opacity .3s; pointer-events:none; z-index:10; max-width:90%; text-align:center; }
         #toast.show { opacity:.92; }
         /* οθόνη εισόδου (ίδια με ZARKOLIA LAB) */
@@ -149,6 +152,17 @@
         <div id="refWrap">
             <span class="lbl">ΜΗΝΑΣ ΑΝΑΦΟΡΑΣ</span>
             <input type="month" id="refMonth">
+        </div>
+
+        <div id="bizWrap">
+            <div class="biz-title">🏢 ΣΤΟΙΧΕΙΑ ΕΠΑΓΓΕΛΜΑΤΙΚΗΣ ΚΙΝΗΣΗΣ</div>
+            <span class="lbl" id="payeeLbl">ΔΙΚΑΙΟΥΧΟΣ</span>
+            <input list="payeeList" id="payee" placeholder="π.χ. FAGRON, ACS, ΒΑΛΤΑΚΗΣ">
+            <datalist id="payeeList"></datalist>
+            <div class="row2">
+                <div><span class="lbl">ΤΙΜΟΛΟΓΙΟ</span><input type="text" id="invoice" placeholder="Αριθμός"></div>
+                <div><span class="lbl">ΗΜΕΡΟΜΗΝΙΑ ΑΝΑΦΟΡΑΣ</span><input type="date" id="invDate"></div>
+            </div>
         </div>
 
         <span class="lbl">ΣΗΜΕΙΩΣΗ (προαιρετικά)</span>
@@ -239,6 +253,11 @@
         <div class="box-title">ΚΑΤΑΝΟΜΗ ΑΝΑ ΑΙΤΙΟΛΟΓΙΑ</div>
         <div class="pie-container"><canvas id="catChart"></canvas></div>
         <table class="tbl" id="catTable"></table>
+    </div>
+
+    <div class="stat-box" id="payeeBox" style="display:none;">
+        <div class="box-title">ΑΝΑ ΔΙΚΑΙΟΥΧΟ / ΠΕΛΑΤΗ</div>
+        <table class="tbl" id="payeeTable"></table>
     </div>
 
     <div class="stat-box">
@@ -490,6 +509,7 @@ function enrich(rows) {
         return {
             row: r.row, date: r.date, amount: parseGreekFloat(r.amount), type, bank: normBank(r.bank),
             reason, note, person, cat, ref,
+            payee: (r.payee || '').toString().trim(), invoice: (r.invoice || '').toString().trim(), invDate: (r.invDate || '').toString().trim(),
             effMonth: ref || (r.date || '').slice(0, 7),
             personGuess: !PERSONS.includes(pRaw) && person !== NO_PERSON,
             catGuess: !ALL_CATS.has(norm(reason)),
@@ -519,12 +539,21 @@ function onCategoryChange() {
     custom.style.display = v === '__other' ? 'block' : 'none';
     custom.required = v === '__other';
     document.getElementById('refWrap').style.display = RECURRING.has(v) ? 'block' : 'none';
+    updateBiz();
+}
+function isBiz() { return currentPerson === 'ZARKOLIA' || BUSINESS_CATS.has(document.getElementById('category').value); }
+function updateBiz() {
+    const on = isBiz();
+    document.getElementById('bizWrap').style.display = on ? 'block' : 'none';
+    document.getElementById('payeeLbl').innerText = currentType === 'Έσοδο' ? 'ΠΕΛΑΤΗΣ / ΠΛΗΡΩΤΗΣ' : 'ΔΙΚΑΙΟΥΧΟΣ';
+    const d = document.getElementById('invDate');
+    if (on && !d.value) d.value = document.getElementById('date').value;
 }
 function renderPersonChips() {
     document.getElementById('personChips').innerHTML = PERSONS.map(p =>
         `<div class="chip ${p === currentPerson ? 'on' : ''}" style="${p === currentPerson ? 'background:' + PERSON_COLORS[p] : ''}" onclick="selectPerson('${p}')">${p}</div>`).join('');
 }
-function selectPerson(p) { currentPerson = p; renderPersonChips(); }
+function selectPerson(p) { currentPerson = p; renderPersonChips(); updateBiz(); }
 
 function prefill(person, cat, amount, ref) {
     setType(CATS['Έσοδο'].some(g => g.items.includes(cat)) ? 'Έσοδο' : 'Έξοδο');
@@ -556,6 +585,8 @@ function loadData(retry) {
         const notes = new Set();
         TX.forEach(t => { if (t.note) notes.add(t.note); else if (t.catGuess) notes.add(t.reason); });
         (data.categories || []).forEach(c => c && notes.add(c));
+        const payees = [...new Set(TX.map(t => t.payee).filter(Boolean))].sort();
+        document.getElementById('payeeList').innerHTML = payees.map(c => `<option value="${esc(c)}">`).join('');
         document.getElementById('noteList').innerHTML = [...notes].slice(0, 300).map(c => `<option value="${esc(c)}">`).join('');
 
         const mSel = document.getElementById('balMonth');
@@ -754,6 +785,14 @@ function renderAnalysis() {
         `<tr><td><b>ΣΥΝΟΛΟ</b></td><td></td><td></td><td class="r"><b style="color:${color}">${eur(total)}</b></td></tr>`
         : '<tr><td class="muted">Καμία κίνηση στο διάστημα</td></tr>';
 
+    // 2β. ανά δικαιούχο (όταν υπάρχουν επαγγελματικά στοιχεία)
+    const byPayee = {};
+    typed.filter(t => t.payee).forEach(t => { byPayee[t.payee] = byPayee[t.payee] || { sum: 0, n: 0 }; byPayee[t.payee].sum += t.amount; byPayee[t.payee].n++; });
+    const payeeRows = Object.entries(byPayee).sort((a, b) => b[1].sum - a[1].sum);
+    document.getElementById('payeeBox').style.display = payeeRows.length ? 'block' : 'none';
+    document.getElementById('payeeTable').innerHTML = payeeRows.map(([p, v]) =>
+        `<tr><td>${esc(p)}</td><td class="r" style="color:#888">${v.n}×</td><td class="r"><b>${eur(v.sum)}</b></td></tr>`).join('');
+
     // 3. πορεία ανά μήνα (στοιβαγμένη ανά πρόσωπο)
     const months = [];
     { let [yy, mm] = from.slice(0, 7).split('-').map(Number); const end = to.slice(0, 7);
@@ -780,7 +819,7 @@ function renderAnalysis() {
 }
 function renderTxList() {
     const q = norm(document.getElementById('txSearch').value);
-    let list = RANGE_TX.filter(t => !q || norm(t.cat + ' ' + t.reason + ' ' + t.note).includes(q))
+    let list = RANGE_TX.filter(t => !q || norm(t.cat + ' ' + t.reason + ' ' + t.note + ' ' + t.payee + ' ' + t.invoice).includes(q))
                        .sort((a, b) => b.date.localeCompare(a.date) || b.row - a.row);
     const n = list.length;
     if (!showAllTx) list = list.slice(0, 30);
@@ -788,7 +827,7 @@ function renderTxList() {
         <div class="tx">
             <div class="main">
                 <div class="t1"><span class="badge" style="background:${PERSON_COLORS[t.person]}">${t.person}${t.personGuess ? '*' : ''}</span> ${t.cat}${t.catGuess ? '<span class="guess">*</span>' : ''}</div>
-                <div class="t2">${t.date.split('-').reverse().join('/')} · ${esc(t.bank)}${t.ref ? ' · για ' + monthLabel(t.ref) : ''}${t.detail ? ' · ' + esc(t.detail) : ''}</div>
+                <div class="t2">${t.date.split('-').reverse().join('/')} · ${esc(t.bank)}${t.ref ? ' · για ' + monthLabel(t.ref) : ''}${t.payee ? ' · ' + esc(t.payee) : ''}${t.invoice ? ' · Τιμ. ' + esc(t.invoice) : ''}${t.invDate ? ' (' + t.invDate.split('-').reverse().join('/') + ')' : ''}${t.detail ? ' · ' + esc(t.detail) : ''}</div>
             </div>
             <div class="amt" style="color:${t.type === 'Έσοδο' ? '#28a745' : '#dc3545'}">${t.type === 'Έσοδο' ? '+' : '−'}${eur(t.amount)}</div>
             <button class="del" title="Διαγραφή" onclick="delTx(${t.row})">✕</button>
@@ -872,7 +911,10 @@ document.getElementById('cashForm').onsubmit = function (e) {
         amount, category: cat, bank, type: currentType,
         person: currentPerson,
         refMonth: RECURRING.has(cat) ? document.getElementById('refMonth').value : '',
-        note: document.getElementById('note').value.trim()
+        note: document.getElementById('note').value.trim(),
+        payee: isBiz() ? document.getElementById('payee').value.trim().toUpperCase() : '',
+        invoice: isBiz() ? document.getElementById('invoice').value.trim() : '',
+        invDate: isBiz() ? document.getElementById('invDate').value : ''
     }).then(res => {
         btn.disabled = false; btn.innerText = 'Καταχώρηση';
         if (res && res.error) { toast('Σφάλμα: ' + res.error); return; }
@@ -880,6 +922,8 @@ document.getElementById('cashForm').onsubmit = function (e) {
         document.getElementById('amount').value = '';
         document.getElementById('note').value = '';
         document.getElementById('customCategory').value = '';
+        ['payee', 'invoice', 'invDate'].forEach(id => document.getElementById(id).value = '');
+        updateBiz();
         loadData();
     }).catch(() => { btn.disabled = false; btn.innerText = 'Καταχώρηση'; toast('Αποτυχία σύνδεσης'); });
 };
